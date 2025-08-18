@@ -1,9 +1,12 @@
 package com.cartaGo.cartaGo_backend.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+
 
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "Cliente")
 @Data
 public class Cliente {
@@ -12,13 +15,13 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(unique = true)
+    @Column(unique = true, length = 100)
     private String nombre;
 
-    @Column(unique = true)
-    private String email;
-
-    private String contraseña;
-
+    @Column(length = 255)
     private String imagen;
+
+    @OneToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 }

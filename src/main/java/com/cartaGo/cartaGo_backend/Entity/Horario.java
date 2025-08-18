@@ -1,12 +1,15 @@
 package com.cartaGo.cartaGo_backend.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-
+import lombok.*;
 import java.time.LocalTime;
 
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "Horario")
+@Builder
 public class Horario {
 
     @Id

@@ -1,21 +1,25 @@
 package com.cartaGo.cartaGo_backend.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 @Entity
 @Data
-@IdClass(ParticipacionSalaId.class)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ParticipacionSala {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     @ManyToOne
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
-    @Id
     @ManyToOne
     @JoinColumn(name = "sala_pago_id")
     private SalaPago salaPago;

@@ -1,10 +1,13 @@
 package com.cartaGo.cartaGo_backend.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PlatoSala {
 
     @Id

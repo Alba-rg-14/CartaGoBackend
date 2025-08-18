@@ -1,20 +1,26 @@
 package com.cartaGo.cartaGo_backend.Entity;
 
+import com.cartaGo.cartaGo_backend.Entity.id.ParticipacionPlatoId;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 @Entity
 @Data
-@IdClass(ParticipacionPlatoId.class)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ParticipacionPlato {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     @ManyToOne
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
-    @Id
     @ManyToOne
     @JoinColumn(name = "plato_sala_id")
     private PlatoSala platoSala;
+
 }

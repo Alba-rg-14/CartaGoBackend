@@ -1,19 +1,23 @@
 package com.cartaGo.cartaGo_backend.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SalaPago {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private LocalDateTime fecha_creacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion;
 
     private Double saldo;
 
@@ -26,6 +30,12 @@ public class SalaPago {
     @ManyToOne
     @JoinColumn(name = "restaurante_id")
     private Restaurante restaurante;
+
+    @OneToMany(mappedBy = "salaPago", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PlatoSala> platosSala;
+
+    @OneToMany(mappedBy = "salaPago", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ParticipacionSala> participaciones;
 
     public enum FormaDePago {
         pago_igualitario, pago_personalizado

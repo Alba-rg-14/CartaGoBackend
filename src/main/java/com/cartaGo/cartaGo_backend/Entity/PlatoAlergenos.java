@@ -1,11 +1,15 @@
 package com.cartaGo.cartaGo_backend.Entity;
 
+import com.cartaGo.cartaGo_backend.Entity.id.PlatoAlergenosId;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @IdClass(PlatoAlergenosId.class)
+@Table(name = "PlatoAlergenos")
 public class PlatoAlergenos {
 
     @Id
