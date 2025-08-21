@@ -1,4 +1,4 @@
-package com.cartaGo.cartaGo_backend.Entity;
+package com.cartaGo.cartaGo_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +17,7 @@ public class Usuario {
     @Column(nullable = false, length = 100, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "password_hash", nullable = false, length = 60)
     private String contraseña;
 
     @Enumerated(EnumType.STRING)

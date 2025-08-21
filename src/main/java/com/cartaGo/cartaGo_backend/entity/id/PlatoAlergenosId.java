@@ -1,4 +1,4 @@
-package com.cartaGo.cartaGo_backend.Entity.id;
+package com.cartaGo.cartaGo_backend.entity.id;
 
 import java.io.Serializable;
 import java.util.Objects;

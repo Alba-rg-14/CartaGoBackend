@@ -1,8 +1,9 @@
-package com.cartaGo.cartaGo_backend.Entity;
+package com.cartaGo.cartaGo_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalTime;
+import java.time.DayOfWeek;
 
 @Entity
 @Data
@@ -17,16 +18,14 @@ public class Horario {
     private Integer id;
 
     @Enumerated(EnumType.STRING)
-    private DiaSemana dia;
+    private DayOfWeek dia;
 
-    private LocalTime hora_inicio;
-    private LocalTime hora_fin;
+    private LocalTime apertura;
+    private LocalTime cierre;
 
     @ManyToOne
     @JoinColumn(name = "restaurante_id")
     private Restaurante restaurante;
 
-    public enum DiaSemana {
-        lunes, martes, miércoles, jueves, viernes, sábado, domingo
-    }
+
 }

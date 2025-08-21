@@ -1,4 +1,4 @@
-package com.cartaGo.cartaGo_backend.Entity;
+package com.cartaGo.cartaGo_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

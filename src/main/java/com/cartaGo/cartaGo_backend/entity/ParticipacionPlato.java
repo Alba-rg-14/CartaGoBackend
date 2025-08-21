@@ -1,6 +1,5 @@
-package com.cartaGo.cartaGo_backend.Entity;
+package com.cartaGo.cartaGo_backend.entity;
 
-import com.cartaGo.cartaGo_backend.Entity.id.ParticipacionPlatoId;
 import jakarta.persistence.*;
 import lombok.*;
 

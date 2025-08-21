@@ -1,4 +1,4 @@
-package com.cartaGo.cartaGo_backend.Entity.id;
+package com.cartaGo.cartaGo_backend.entity.id;
 
 import lombok.Data;
 
