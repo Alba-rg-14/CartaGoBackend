@@ -42,6 +42,7 @@ public class SalaPago {
     }
 
     public enum EstadoSala {
+
         abierta, cerrada
     }
 }

@@ -12,10 +12,10 @@ public interface SalaPagoRepository extends JpaRepository<SalaPago, Integer> {
     List<SalaPago> findByRestauranteId(Integer restauranteId);
 
     // por forma de pago (enum)
-    List<SalaPago> findByFormaPago(SalaPago.FormaDePago formaDePago);
+    List<SalaPago> findByFormaDePago(SalaPago.FormaDePago formaDePago);
 
     //por estado de la sala (enum)
-    List<SalaPago> findByEstadoSala(SalaPago.EstadoSala estado);
+//    List<SalaPago> findByEstadoSala(SalaPago.EstadoSala estado);
 
     // por fecha de creación de la sala
     List<SalaPago> findByFechaCreacion(LocalDateTime fechaCreacion);

@@ -24,7 +24,7 @@ public class UsuarioService {
 
         Usuario u = new Usuario();
         u.setEmail(dto.email);
-        u.setContraseña(hash);
+        u.setPassword_hash(hash);
         u.setRol(dto.rol);
         return usuarioRepository.save(u);
     }
@@ -34,6 +34,6 @@ public class UsuarioService {
         Usuario u = usuarioRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         var encoder = new BCryptPasswordEncoder();
-        return encoder.matches(passwordEnClaro, u.getContraseña());
+        return encoder.matches(passwordEnClaro, u.getPassword_hash());
     }
 }
