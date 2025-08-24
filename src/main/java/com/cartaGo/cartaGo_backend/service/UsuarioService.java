@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
@@ -36,4 +38,13 @@ public class UsuarioService {
         var encoder = new BCryptPasswordEncoder();
         return encoder.matches(passwordEnClaro, u.getPassword_hash());
     }
+
+    public Optional<Usuario> findByEmail(String email) {
+        return usuarioRepository.findByEmailIgnoreCase(email);
+    }
+    public boolean verificarPassword(Usuario u, String passwordEnClaro) {
+        var encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        return encoder.matches(passwordEnClaro, u.getPassword_hash());
+    }
+
 }

@@ -20,7 +20,7 @@ public class JwtService {
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.expires-min}") long expiresMinutes
     ) {
-        this.algorithm = Algorithm.HMAC256(secret); // usa una clave larga
+        this.algorithm = Algorithm.HMAC256(secret);
         this.expiresMinutes = expiresMinutes;
     }
 
@@ -31,7 +31,7 @@ public class JwtService {
         return JWT.create()
                 .withSubject(u.getEmail())
                 .withClaim("uid", u.getId())
-                .withClaim("role", u.getRol().name())          // CLIENTE / RESTAURANTE
+                .withClaim("role", u.getRol().name())
                 .withIssuedAt(Date.from(now))
                 .withExpiresAt(Date.from(exp))
                 .sign(algorithm);
