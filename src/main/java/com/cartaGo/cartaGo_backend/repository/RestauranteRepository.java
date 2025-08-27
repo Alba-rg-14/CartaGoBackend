@@ -6,5 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface RestauranteRepository extends JpaRepository<Restaurante, Integer> {
-    Optional<Restaurante> findByNombreIgnoreCase(String nombre);
+    Optional<Restaurante> findByNombreContainingIgnoreCase(String nombre);
+    Optional<Restaurante> findByEstado(Restaurante.Estado estado);
 }

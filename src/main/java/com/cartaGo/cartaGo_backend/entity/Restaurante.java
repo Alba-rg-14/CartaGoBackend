@@ -3,6 +3,9 @@ package com.cartaGo.cartaGo_backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
 @Data
@@ -38,7 +41,17 @@ public class Restaurante {
         abierto, cerrado
     }
 
-    @OneToOne
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
     private Usuario usuario;
+
+    @OneToOne(mappedBy = "restaurante", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Carta carta;
+
+    @OneToMany(mappedBy = "restaurante",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    @Builder.Default
+    private List<Horario> horarios = new ArrayList<>();
+
 }

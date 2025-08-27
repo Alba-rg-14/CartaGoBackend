@@ -22,7 +22,7 @@ public class Carta {
     @OneToMany(mappedBy = "carta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Plato> platos;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "restaurante_id")
     private Restaurante restaurante;
 }

@@ -32,4 +32,11 @@ public class Usuario {
         CLIENTE,
         RESTAURANTE
     }
+
+    @OneToOne(mappedBy = "usuario", fetch = FetchType.LAZY)
+    private Cliente cliente;
+
+    @OneToOne(mappedBy = "usuario", fetch = FetchType.LAZY)
+    private Restaurante restaurante;
+
 }

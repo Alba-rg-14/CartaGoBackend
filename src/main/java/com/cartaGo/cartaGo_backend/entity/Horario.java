@@ -9,6 +9,8 @@ import java.time.DayOfWeek;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Table(name = "Horario")
 @Builder
 public class Horario {
@@ -23,7 +25,7 @@ public class Horario {
     private LocalTime apertura;
     private LocalTime cierre;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "restaurante_id")
     private Restaurante restaurante;
 

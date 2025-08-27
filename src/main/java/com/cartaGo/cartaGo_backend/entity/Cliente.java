@@ -9,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @Table(name = "Cliente")
 @Data
+@Builder
 public class Cliente {
 
     @Id
@@ -21,7 +22,7 @@ public class Cliente {
     @Column(length = 255)
     private String imagen;
 
-    @OneToOne
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
     private Usuario usuario;
 }
