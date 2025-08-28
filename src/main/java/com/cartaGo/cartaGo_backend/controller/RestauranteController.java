@@ -44,4 +44,17 @@ public class RestauranteController {
     public void cambiarEstado(@PathVariable Integer id){
         restauranteService.cambiarEstado(id);
     }
+
+    // /restaurante/cerca?lat=36.721&lon=-4.421&radioKm=1
+    @GetMapping("/cerca")
+    public List<RestauranteDTO> getCercanos(
+            @RequestParam double lat,
+            @RequestParam double lon,
+            @RequestParam(required = false, defaultValue = "1.0") double radioKm
+    ) {
+        if (lat < -90 || lat > 90 || lon < -180 || lon > 180 || radioKm <= 0) {
+            throw new IllegalArgumentException("Parámetros inválidos: lat/lon/radioKm");
+        }
+        return restauranteService.findCercanos(lat, lon, radioKm);
+    }
 }

@@ -1,7 +1,8 @@
 package com.cartaGo.cartaGo_backend.controller;
 
+import com.cartaGo.cartaGo_backend.dto.AddressDTO;
+import com.cartaGo.cartaGo_backend.dto.GeocodingDTO;
 import com.cartaGo.cartaGo_backend.service.GeocodingService;
-import com.cartaGo.cartaGo_backend.service.GeocodingService.ForwardGeocodeResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,27 +12,30 @@ import java.util.Map;
 @RequestMapping("/api/geocode")
 public class GeocodingController {
 
-    private final GeocodingService service;
+    private final GeocodingService geocodingService;
 
     public GeocodingController(GeocodingService service) {
-        this.service = service;
+        this.geocodingService = service;
     }
 
-    // GET /api/geocode/reverse?lat=36.7213&lon=-4.4214
+
+    // GET /geocode/reverse?lat=36.721&lon=-4.421
     @GetMapping("/reverse")
-    public Map<String, Object> reverse(@RequestParam double lat, @RequestParam double lon) {
-        var r = service.reverse(lat, lon);
-        return Map.of(
-                "displayName", r.displayName(),
-                "lat", r.lat(),
-                "lon", r.lon(),
-                "address", r.address()
-        );
+    public GeocodingDTO reverse(@RequestParam double lat, @RequestParam double lon) {
+        return geocodingService.reverse(lat, lon);
     }
 
-    // GET /api/geocode/forward?q=Av.%20de%20Andaluc%C3%ADa%2C%20M%C3%A1laga
-    @GetMapping("/forward")
-    public List<ForwardGeocodeResult> forward(@RequestParam String q) {
-        return service.forward(q);
+
+    // POST /geocode/forward   (body: AddressDTO)
+    // Ej. {
+    //   "road": "Paseo del Parque",
+    //   "houseNumber": "3",
+    //   "city": "Málaga",
+    //   "postcode": "29015",
+    //   "country": "España"
+    // }
+    @PostMapping("/forward")
+    public GeocodingDTO forward(@RequestBody AddressDTO address) {
+        return geocodingService.forwardOne(address);
     }
 }
