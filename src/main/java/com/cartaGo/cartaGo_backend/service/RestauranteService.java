@@ -1,6 +1,5 @@
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.AddressDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.RestaurantePreviewDTO;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
@@ -85,14 +84,14 @@ public class RestauranteService {
         return findCercanos(userLat, userLon, 1.0);
     }
 
-    public void setRestauranteUbicacion(Integer id, AddressDTO dir) throws Exception{
+    public void setRestauranteUbicacion(Integer id, String dir) throws Exception{
         Double lat, lon;
         Restaurante r = restauranteRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con id: " + id));
-        r.setDireccion(geocodingService.toSingleLine(dir));
-        var res= geocodingService.forwardOne(dir);
+        r.setDireccion(dir);
+        var res= geocodingService.buscarPorDireccion(dir);
         if (null != res){
-            r.setLat(res.lat() );
-            r.setLon(res.lon());
+            r.setLat(res.getLat() );
+            r.setLon(res.getLon());
             restauranteRepository.saveAndFlush(r);
         }else {
             throw new Exception("No se ha encontrado la dirección:" + dir) ;
@@ -103,8 +102,8 @@ public class RestauranteService {
         Restaurante r = restauranteRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con id: " + id));
         r.setLat(lat);
         r.setLon(lon);
-        var res = geocodingService.reverse(lat,lon);
-        r.setDireccion(res.displayName());
+        var res = geocodingService.buscarPorCoordenadas(lat,lon);
+        r.setDireccion(res.getDireccion());
         restauranteRepository.saveAndFlush(r);
     }
 

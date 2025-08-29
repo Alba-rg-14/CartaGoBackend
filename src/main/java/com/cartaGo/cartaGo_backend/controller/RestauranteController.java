@@ -4,6 +4,7 @@ import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.RestaurantePreviewDTO;
 import com.cartaGo.cartaGo_backend.service.RestauranteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,6 +44,22 @@ public class RestauranteController {
     @PutMapping("/estado/{id}")
     public void cambiarEstado(@PathVariable Integer id){
         restauranteService.cambiarEstado(id);
+    }
+
+    /** Actualizar ubicación a partir de dirección */
+    @PutMapping("/{id}/ubicacion")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setUbicacion(@PathVariable Integer id, @RequestParam String direccion) throws Exception {
+        restauranteService.setRestauranteUbicacion(id, direccion);
+    }
+
+    /** Actualizar ubicación a partir de coordenadas */
+    @PutMapping("/{id}/coordenadas")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setCoordenadas(@PathVariable Integer id,
+                               @RequestParam Double lat,
+                               @RequestParam Double lon) {
+        restauranteService.setRestauranteCoor(id, lat, lon);
     }
 
     // /restaurante/cerca?lat=36.721&lon=-4.421&radioKm=1

@@ -1,10 +1,11 @@
 package com.cartaGo.cartaGo_backend.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.Data;
 
-public record GeocodingDTO(
-        String displayName,  // línea “bonita”
-        Double lat,
-        Double lon,
-        AddressDTO address   // dirección desglosada
-) { }
+@Data @Builder
+public class GeocodingDTO {
+    private double lat;       // coordenada
+    private double lon;       // coordenada
+    private String direccion; // texto bonito/normalizado
+}

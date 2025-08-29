@@ -1,41 +1,40 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.AddressDTO;
 import com.cartaGo.cartaGo_backend.dto.GeocodingDTO;
 import com.cartaGo.cartaGo_backend.service.GeocodingService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/geocode")
+@RequestMapping("/geocoding")
+@RequiredArgsConstructor
 public class GeocodingController {
 
     private final GeocodingService geocodingService;
 
-    public GeocodingController(GeocodingService service) {
-        this.geocodingService = service;
+    /** Dirección -> Coordenadas (+ dirección formateada) */
+    @GetMapping("/forward")
+    public GeocodingDTO forward(@RequestParam String direccion) {
+        try {
+            return geocodingService.buscarPorDireccion(direccion);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
     }
 
-
-    // GET /geocode/reverse?lat=36.721&lon=-4.421
+    /** Coordenadas -> Dirección (+ te devolvemos las mismas coords) */
     @GetMapping("/reverse")
     public GeocodingDTO reverse(@RequestParam double lat, @RequestParam double lon) {
-        return geocodingService.reverse(lat, lon);
-    }
-
-
-    // POST /geocode/forward   (body: AddressDTO)
-    // Ej. {
-    //   "road": "Paseo del Parque",
-    //   "houseNumber": "3",
-    //   "city": "Málaga",
-    //   "postcode": "29015",
-    //   "country": "España"
-    // }
-    @PostMapping("/forward")
-    public GeocodingDTO forward(@RequestBody AddressDTO address) {
-        return geocodingService.forwardOne(address);
+        try {
+            return geocodingService.buscarPorCoordenadas(lat, lon);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
     }
 }
