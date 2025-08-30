@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Data
+@Data  @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @IdClass(PlatoAlergenosId.class)
@@ -13,12 +13,12 @@ import lombok.*;
 public class PlatoAlergenos {
 
     @Id
-    @ManyToOne
-    @JoinColumn(name = "plato_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "plato_id", nullable = false)
     private Plato plato;
 
     @Id
-    @ManyToOne
-    @JoinColumn(name = "alergeno_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "alergeno_id", nullable = false)
     private Alergeno alergeno;
 }

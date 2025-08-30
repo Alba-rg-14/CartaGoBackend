@@ -7,12 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Table(name = "Restaurante")
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
+@ToString(exclude = {"carta", "usuario", "horarios"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Entity @Table(name = "Restaurante")
 public class Restaurante {
 
     @Id
@@ -50,8 +49,26 @@ public class Restaurante {
 
     @OneToMany(mappedBy = "restaurante",
             cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     @Builder.Default
     private List<Horario> horarios = new ArrayList<>();
+
+    public void setCarta(Carta nueva) {
+        if (this.carta != null) {
+            this.carta.setRestaurante(null);
+        }
+        this.carta = nueva;
+        if (nueva != null && nueva.getRestaurante() != this) {
+            nueva.setRestaurante(this);
+        }
+    }
+
+    public void removeCarta() {
+        if (this.carta != null) {
+            this.carta.setRestaurante(null);
+            this.carta = null; // orphanRemoval borrará la carta al commit
+        }
+    }
 
 }

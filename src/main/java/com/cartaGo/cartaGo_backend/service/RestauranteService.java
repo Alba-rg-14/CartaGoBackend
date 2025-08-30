@@ -1,7 +1,10 @@
 package com.cartaGo.cartaGo_backend.service;
 
+import com.cartaGo.cartaGo_backend.dto.CartaDTO;
+import com.cartaGo.cartaGo_backend.dto.PlatoDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.RestaurantePreviewDTO;
+import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import com.cartaGo.cartaGo_backend.repository.RestauranteRepository;
@@ -9,6 +12,7 @@ import com.cartaGo.cartaGo_backend.utils.GeoUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -141,4 +145,85 @@ public class RestauranteService {
         }
         restauranteRepository.saveAndFlush(r);
     }
+
+    public String setImagen(Integer id, String url) {
+        String u = url == null ? null : url.trim();
+        if (u == null || !u.startsWith("https://res.cloudinary.com/")) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "URL de imágen inválida");
+        }
+        Restaurante r = restauranteRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con id: " + id));
+        r.setImagen(u);
+        restauranteRepository.saveAndFlush(r);
+        return u;
+    }
+
+    public String getImagen(Integer id) {
+        var r = restauranteRepository.findById(id).orElseThrow();
+        return r.getImagen() == null ? "" : r.getImagen();
+    }
+
+    public void deleteImagen(Integer id) {
+        var r = restauranteRepository.findById(id).orElseThrow();
+        r.setImagen(null);
+        restauranteRepository.saveAndFlush(r);
+    }
+
+    // Crear carta para un restaurante (1:1)
+    @Transactional
+    public void crearCarta(Integer id) {
+        Restaurante r = restauranteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurante no encontrado con id: " + id));
+
+        if (r.getCarta() != null) throw new IllegalStateException("Ya tiene carta");
+
+        Carta c = new Carta();
+        r.setCarta(c);              // enlaza ambos lados (método en la entity)
+        // No hace falta llamar a save(c): cascade PERSIST desde Restaurante -> Carta
+        // Tampoco a save(r) si r está managed; pero se puede por claridad:
+        restauranteRepository.saveAndFlush(r);
+    }
+
+    // Reemplazar carta (borra la anterior por orphanRemoval y pone la nueva)
+    @Transactional
+    public void reemplazarCarta(Integer id) {
+        Restaurante r = restauranteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurante no encontrado con id: " + id));
+        Carta nueva = new Carta();
+
+        r.setCarta(nueva); // el setter en la entity rompe el enlace antiguo y pone el nuevo
+        restauranteRepository.saveAndFlush(r); // opcional si r sigue managed; explícito está bien
+    }
+
+    // Quitar (y borrar) la carta
+    @Transactional
+    public void quitarCarta(Integer id) {
+        Restaurante r = restauranteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurante no encontrado con id: " + id));
+
+        r.removeCarta();            // método en la entity
+        restauranteRepository.saveAndFlush(r);    // al hacer flush/commit, orphanRemoval elimina la carta
+    }
+
+    @Transactional(readOnly = true)
+    public CartaDTO obtenerCarta(Integer restauranteId) {
+        Restaurante r = restauranteRepository.findById(restauranteId)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurante no encontrado"));
+        Carta c = r.getCarta();
+        if (c == null) return null;
+
+        return CartaDTO.builder()
+                .id(c.getId())
+                .restauranteId(r.getId())
+                .platos(c.getPlatos().stream()
+                        .map(p -> PlatoDTO.builder()
+                                .id(p.getId())
+                                .nombre(p.getNombre())
+                                .descripcion(p.getDescripcion())
+                                .precio(p.getPrecio())
+                                .build())
+                        .toList())
+                .build();
+    }
+
 }

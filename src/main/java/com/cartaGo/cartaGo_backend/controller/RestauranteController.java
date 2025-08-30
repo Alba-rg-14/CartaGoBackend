@@ -1,7 +1,9 @@
 package com.cartaGo.cartaGo_backend.controller;
 
+import com.cartaGo.cartaGo_backend.dto.CartaDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.RestaurantePreviewDTO;
+import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.service.RestauranteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -73,5 +75,45 @@ public class RestauranteController {
             throw new IllegalArgumentException("Parámetros inválidos: lat/lon/radioKm");
         }
         return restauranteService.findCercanos(lat, lon, radioKm);
+    }
+
+    @PutMapping(path = "/{id}/imagen", consumes = "text/plain", produces = "text/plain")
+    public String setImagen(@PathVariable Integer id, @RequestBody String url) {
+        return restauranteService.setImagen(id, url); // devolvemos la misma URL guardada
+    }
+
+    @GetMapping(path = "/{id}/imagen", produces = "text/plain")
+    public String getImagen(@PathVariable Integer id) {
+        return restauranteService.getImagen(id);
+    }
+
+    // DELETE imagen
+    @DeleteMapping("/{id}/imagen")
+    public void deleteImagen(@PathVariable Integer id) {
+        restauranteService.deleteImagen(id);
+    }
+
+    // Crear carta para un restaurante
+    @PostMapping("/{id}/carta")
+    public void crearCarta(@PathVariable Integer id) {
+        restauranteService.crearCarta(id);
+    }
+
+    // Reemplazar carta (borra la antigua y pone una nueva)
+    @PutMapping("/{id}/carta")
+    public void reemplazarCarta(@PathVariable Integer id) {
+        restauranteService.reemplazarCarta(id);
+    }
+
+    // Eliminar carta
+    @DeleteMapping("/{id}/carta")
+    public void quitarCarta(@PathVariable Integer id) {
+        restauranteService.quitarCarta(id);
+    }
+
+    // Obtener carta
+    @GetMapping("/{id}/carta")
+    public CartaDTO obtenerCarta(@PathVariable Integer id) {
+        return restauranteService.obtenerCarta(id);
     }
 }
