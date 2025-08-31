@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger;
 import com.cartaGo.cartaGo_backend.dto.AlergenoDTO;
 import com.cartaGo.cartaGo_backend.dto.PlatoDTO;
 import com.cartaGo.cartaGo_backend.dto.PlatoRequestDTO;
+import com.cartaGo.cartaGo_backend.dto.ReordenarDTO;
 import com.cartaGo.cartaGo_backend.entity.Alergeno;
 import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.entity.Plato;
@@ -198,4 +199,96 @@ import java.util.List;
         }
 
 
+    @Transactional
+    public void moverArriba(Integer platoId) {
+        Plato p = platoRepository.findById(platoId)
+                .orElseThrow(() -> new EntityNotFoundException("Plato no encontrado"));
+
+        List<Plato> lista = platoRepository.findByCarta_IdAndSeccionOrderByOrdenAsc(
+                p.getCarta().getId(), p.getSeccion());
+
+        int idx = lista.indexOf(p);
+        if (idx > 0) {
+            Plato anterior = lista.get(idx - 1);
+            int ordenTmp = p.getOrden();
+            p.setOrden(anterior.getOrden());
+            anterior.setOrden(ordenTmp);
+            platoRepository.saveAndFlush(p);
+            platoRepository.saveAndFlush(anterior);
+        }
     }
+
+    @Transactional
+    public void moverAbajo(Integer platoId) {
+        Plato p = platoRepository.findById(platoId)
+                .orElseThrow(() -> new EntityNotFoundException("Plato no encontrado"));
+
+        List<Plato> lista = platoRepository.findByCarta_IdAndSeccionOrderByOrdenAsc(
+                p.getCarta().getId(), p.getSeccion());
+
+        int idx = lista.indexOf(p);
+        if (idx >= 0 && idx < lista.size() - 1) {
+            Plato siguiente = lista.get(idx + 1);
+            int ordenTmp = p.getOrden();
+            p.setOrden(siguiente.getOrden());
+            siguiente.setOrden(ordenTmp);
+            platoRepository.saveAndFlush(p);
+            platoRepository.saveAndFlush(siguiente);
+        }
+    }
+
+    @Transactional
+    public void normalizarOrden(Integer cartaId, String seccion) {
+        List<Plato> lista = platoRepository.findByCarta_IdAndSeccionOrderByOrdenAsc(cartaId, seccion);
+        for (int i = 0; i < lista.size(); i++) {
+            lista.get(i).setOrden(i + 1);
+            platoRepository.saveAndFlush(lista.get(i));
+        }
+    }
+
+    @Transactional
+    public void reordenar(Integer cartaId, List<ReordenarDTO> reorden) {
+        for (ReordenarDTO r : reorden) {
+            Plato p = platoRepository.findById(r.getPlatoId())
+                    .orElseThrow(() -> new EntityNotFoundException("Plato no encontrado"));
+            if (!p.getCarta().getId().equals(cartaId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Plato no pertenece a esta carta");
+            }
+            p.setOrden(r.getOrden());
+            platoRepository.saveAndFlush(p);
+        }
+    }
+
+    @Transactional
+    public int renombrarSeccionSinTocarOrden(Integer cartaId, String from, String to) {
+        String src = (from == null ? "" : from.trim());
+        String dst = (to   == null ? "" : to.trim());
+        if (src.isEmpty() || dst.isEmpty())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from/to requeridos");
+
+        if (src.equals(dst)) return 0;
+
+        // comprobar si existe ya la sección destino
+        if (platoRepository.existsByCarta_IdAndSeccion(cartaId, dst)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Ya existe la sección destino '" + dst + "' en la carta " + cartaId
+            );
+        }
+
+        // Cargamos todos los platos de la sección origen
+        List<Plato> platos = platoRepository.findByCarta_IdAndSeccionOrderByOrdenAsc(cartaId, src);
+        for (Plato p : platos) {
+            p.setSeccion(dst); // cambiamos solo la sección
+        }
+
+        // Guardamos y flush para forzar UPDATE inmediato
+        platoRepository.saveAll(platos);
+        platoRepository.flush();
+
+        return platos.size();
+    }
+
+
+
+}

@@ -3,6 +3,7 @@ package com.cartaGo.cartaGo_backend.controller;
 import com.cartaGo.cartaGo_backend.dto.CartaDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.RestaurantePreviewDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteUpdateDTO;
 import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.service.RestauranteService;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,12 @@ public class RestauranteController {
     @PutMapping("/estado/{id}")
     public void cambiarEstado(@PathVariable Integer id){
         restauranteService.cambiarEstado(id);
+    }
+
+    @PutMapping("/{id}")
+    public RestauranteDTO actualizarRestaurante(@PathVariable Integer id,
+                                                @RequestBody RestauranteUpdateDTO req) {
+        return restauranteService.actualizarRestaurante(id, req);
     }
 
     /** Actualizar ubicación a partir de dirección */

@@ -20,4 +20,16 @@ public interface PlatoRepository extends JpaRepository<Plato, Integer> {
     List<Plato> findByCarta_IdOrderBySeccionAscOrdenAsc(Integer cartaId);
 
     List<Plato> findByCarta_IdAndSeccionOrderByOrdenAsc(Integer cartaId, String seccion);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        UPDATE Plato p
+        SET p.seccion = :dst
+        WHERE p.carta.id = :cartaId AND p.seccion = :src
+    """)
+    int bulkRenameSection(@Param("cartaId") Integer cartaId,
+                          @Param("src") String from,
+                          @Param("dst") String to);
+
+    boolean existsByCarta_IdAndSeccion(Integer cartaId, String dst);
 }

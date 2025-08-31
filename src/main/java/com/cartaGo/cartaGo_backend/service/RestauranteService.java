@@ -1,9 +1,6 @@
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.CartaDTO;
-import com.cartaGo.cartaGo_backend.dto.PlatoDTO;
-import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
-import com.cartaGo.cartaGo_backend.dto.RestaurantePreviewDTO;
+import com.cartaGo.cartaGo_backend.dto.*;
 import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
@@ -11,10 +8,14 @@ import com.cartaGo.cartaGo_backend.repository.RestauranteRepository;
 import com.cartaGo.cartaGo_backend.utils.GeoUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
+import static com.cartaGo.cartaGo_backend.mapper.RestauranteMapper.toDTO;
 
 @Service
 @RequiredArgsConstructor
@@ -225,5 +226,33 @@ public class RestauranteService {
                         .toList())
                 .build();
     }
+
+    @Transactional
+    public RestauranteDTO actualizarRestaurante(Integer id, RestauranteUpdateDTO req) {
+        Restaurante r = restauranteRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado"));
+
+        if (req.getNombre() != null)      r.setNombre(req.getNombre().trim());
+        if (req.getDescripcion() != null) r.setDescripcion(req.getDescripcion().trim());
+        if (req.getDireccion() != null)   r.setDireccion(req.getDireccion().trim());
+        if (req.getLat() != null)         r.setLat(req.getLat());
+        if (req.getLon() != null)         r.setLon(req.getLon());
+
+        if (req.getImagen() != null) {
+            String u = req.getImagen().trim();
+            if (!u.isEmpty() && !u.startsWith("https://res.cloudinary.com/")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL de imagen inválida");
+            }
+            r.setImagen(u.isEmpty() ? null : u);
+        }
+
+        if (req.getEstado() != null) {
+            r.setEstado(Restaurante.Estado.valueOf(req.getEstado().toLowerCase()));
+        }
+
+        Restaurante saved = restauranteRepository.saveAndFlush(r);
+        return toDTO(saved);
+    }
+
 
 }
