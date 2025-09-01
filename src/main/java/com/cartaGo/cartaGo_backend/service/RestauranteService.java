@@ -255,4 +255,8 @@ public class RestauranteService {
     }
 
 
+    public Integer getCartaIdByRestauranteId(Integer restauranteId) {
+        Restaurante r = restauranteRepository.findById(restauranteId).orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado"));
+        return r.getCarta().getId();
+    }
 }
