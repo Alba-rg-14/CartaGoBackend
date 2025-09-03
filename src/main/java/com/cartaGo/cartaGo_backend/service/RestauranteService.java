@@ -1,9 +1,15 @@
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.*;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.CartaDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoDTO;
+import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestaurantePreviewDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteUpdateDTO;
 import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
+import com.cartaGo.cartaGo_backend.repository.HorarioRepository;
 import com.cartaGo.cartaGo_backend.repository.RestauranteRepository;
 import com.cartaGo.cartaGo_backend.utils.GeoUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -13,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import static com.cartaGo.cartaGo_backend.mapper.RestauranteMapper.toDTO;
@@ -22,6 +31,7 @@ import static com.cartaGo.cartaGo_backend.mapper.RestauranteMapper.toDTO;
 public class RestauranteService {
     private final RestauranteRepository restauranteRepository;
     private final GeocodingService geocodingService;
+    private final HorarioRepository horarioRepository;
 
     //Crear restaurante dado un usuario y nombre
     public Restaurante crearRestaurante(Usuario usuario, String nombre){
@@ -58,8 +68,17 @@ public class RestauranteService {
     }
 
     public List<RestaurantePreviewDTO> getRestaurantesPreviewDTOAbiertos() {
-        return restauranteRepository.findByEstado(Restaurante.Estado.abierto).stream()
-                .map(this::mapToPreviewDto).toList();
+        LocalDateTime ahora = LocalDateTime.now();
+        DayOfWeek dia = ahora.getDayOfWeek();
+        LocalTime hora = ahora.toLocalTime();
+
+        return restauranteRepository.findAll().stream()
+                .filter(r -> horarioRepository
+                        .findByRestauranteIdAndDiaOrderByAperturaAsc(r.getId(), dia)
+                        .stream()
+                        .anyMatch(h -> !hora.isBefore(h.getApertura()) && hora.isBefore(h.getCierre())))
+                .map(this::mapToPreviewDto)
+                .toList();
     }
 
     public List<RestauranteDTO> findCercanos(double userLat, double userLon, double radioKm) {
@@ -114,17 +133,45 @@ public class RestauranteService {
 
 
     private RestauranteDTO mapToDto(Restaurante r) {
-        return RestauranteDTO.builder()
+        // 1) calcular estado "abierto/cerrado" AHORA (día y hora actuales)
+        var ahora = java.time.LocalDateTime.now();
+        var dia   = ahora.getDayOfWeek();
+        var hora  = ahora.toLocalTime();
+
+        boolean abierto = horarioRepository
+                .findByRestauranteIdAndDiaOrderByAperturaAsc(r.getId(), dia)
+                .stream()
+                .anyMatch(h -> !hora.isBefore(h.getApertura()) && hora.isBefore(h.getCierre()));
+
+        // 2) montar lista de horarios (toda la semana) formateando HH:mm
+        var HM = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+        var horariosDto = horarioRepository
+                .findByRestauranteIdOrderByDiaAscAperturaAsc(r.getId())
+                .stream()
+                .map(h -> com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioDTO.builder()
+                        .id(h.getId())
+                        .dia(h.getDia())
+                        .apertura(h.getApertura().format(HM))  // <-- formatear a String
+                        .cierre(h.getCierre().format(HM))      // <-- formatear a String
+                        .build()
+                )
+                .toList();
+
+        // 3) devolver tu RestauranteDTO con estado calculado + horarios
+        return com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO.builder()
                 .id(r.getId())
-                .descripcion(r.getDescripcion())
                 .nombre(r.getNombre())
+                .descripcion(r.getDescripcion())
                 .imagen(r.getImagen())
-                .estado(r.getEstado())
+                .estado(abierto ? com.cartaGo.cartaGo_backend.entity.Restaurante.Estado.abierto
+                        : com.cartaGo.cartaGo_backend.entity.Restaurante.Estado.cerrado)
                 .direccion(r.getDireccion())
                 .lat(r.getLat())
                 .lon(r.getLon())
+                .horarios(horariosDto)
                 .build();
     }
+
 
     public RestaurantePreviewDTO mapToPreviewDto(Restaurante r){
         return RestaurantePreviewDTO.builder()
@@ -258,5 +305,23 @@ public class RestauranteService {
     public Integer getCartaIdByRestauranteId(Integer restauranteId) {
         Restaurante r = restauranteRepository.findById(restauranteId).orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado"));
         return r.getCarta().getId();
+    }
+
+    @Transactional
+    public void actualizarEstadoSegunHorario(Integer restauranteId) {
+        Restaurante r = restauranteRepository.findById(restauranteId)
+                .orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con id: " + restauranteId));
+
+        LocalDateTime ahora = LocalDateTime.now();
+        DayOfWeek dia = ahora.getDayOfWeek();
+        LocalTime hora = ahora.toLocalTime();
+
+        boolean abierto = horarioRepository
+                .findByRestauranteIdAndDiaOrderByAperturaAsc(restauranteId, dia)
+                .stream()
+                .anyMatch(h -> !hora.isBefore(h.getApertura()) && hora.isBefore(h.getCierre()));
+
+        r.setEstado(abierto ? Restaurante.Estado.abierto : Restaurante.Estado.cerrado);
+        restauranteRepository.save(r);
     }
 }

@@ -1,16 +1,14 @@
-package com.cartaGo.cartaGo_backend.dto;
+package com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class AlergenoDTO {
+public class UsuarioResponseDTO {
     private Integer id;
-    private String nombre;
-    private String imagen;
+    private String email;
+    private String rol;
 }

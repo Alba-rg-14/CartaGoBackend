@@ -1,4 +1,4 @@
-package com.cartaGo.cartaGo_backend.dto;
+package com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import jakarta.validation.constraints.NotNull;
 

@@ -1,13 +1,17 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.CartaDTO;
-import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
-import com.cartaGo.cartaGo_backend.dto.RestaurantePreviewDTO;
-import com.cartaGo.cartaGo_backend.dto.RestauranteUpdateDTO;
-import com.cartaGo.cartaGo_backend.entity.Carta;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.CartaDTO;
+import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioDTO;
+import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioRequestDTO;
+import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioRequestSemanalDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestaurantePreviewDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteUpdateDTO;
+import com.cartaGo.cartaGo_backend.service.HorarioService;
 import com.cartaGo.cartaGo_backend.service.RestauranteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,60 +22,48 @@ import java.util.List;
 public class RestauranteController {
 
     private final RestauranteService restauranteService;
+    private final HorarioService horarioService;
 
+    //-------------------------------------------------Getters de restaurante----------------------------------------------------------------------
+
+    //GET all
     @GetMapping
     public List<RestauranteDTO> getAll(){
         return restauranteService.getAllRestaurantes();
     }
 
+    //GET preview por ID
     @GetMapping("/{id}")
     public RestaurantePreviewDTO getById(@PathVariable Integer id){
         return restauranteService.getById(id);
     }
 
+    //GET all preview
     @GetMapping("preview")
     public List<RestaurantePreviewDTO> getAllPreview(){
         return restauranteService.getAllRestaurantesPreviewDTO();
     }
 
+    //GET preview por nombre
     @GetMapping("preview/{nombre}")
     public RestauranteDTO getByNombre(@PathVariable String nombre){
        return restauranteService.getRestaurantesPreviewDTOByNombre(nombre);
     }
 
+    //GET preview de los abiertos
     @GetMapping("preview/abiertos")
     public List<RestaurantePreviewDTO> getAbiertos(){
         return restauranteService.getRestaurantesPreviewDTOAbiertos();
     }
 
-    @PutMapping("/estado/{id}")
-    public void cambiarEstado(@PathVariable Integer id){
-        restauranteService.cambiarEstado(id);
-    }
-
+    //PUT restaurante
     @PutMapping("/{id}")
     public RestauranteDTO actualizarRestaurante(@PathVariable Integer id,
                                                 @RequestBody RestauranteUpdateDTO req) {
         return restauranteService.actualizarRestaurante(id, req);
     }
 
-    /** Actualizar ubicación a partir de dirección */
-    @PutMapping("/{id}/ubicacion")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void setUbicacion(@PathVariable Integer id, @RequestParam String direccion) throws Exception {
-        restauranteService.setRestauranteUbicacion(id, direccion);
-    }
-
-    /** Actualizar ubicación a partir de coordenadas */
-    @PutMapping("/{id}/coordenadas")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void setCoordenadas(@PathVariable Integer id,
-                               @RequestParam Double lat,
-                               @RequestParam Double lon) {
-        restauranteService.setRestauranteCoor(id, lat, lon);
-    }
-
-    // /restaurante/cerca?lat=36.721&lon=-4.421&radioKm=1
+    // GET restaurantes en el radio de 1km
     @GetMapping("/cerca")
     public List<RestauranteDTO> getCercanos(
             @RequestParam double lat,
@@ -83,6 +75,27 @@ public class RestauranteController {
         }
         return restauranteService.findCercanos(lat, lon, radioKm);
     }
+
+    //-------------------------------------------------Ubicación de un restaurante----------------------------------------------------------------------
+
+    // Put ubicación a partir de dirección
+    @PutMapping("/{id}/ubicacion")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setUbicacion(@PathVariable Integer id, @RequestParam String direccion) throws Exception {
+        restauranteService.setRestauranteUbicacion(id, direccion);
+    }
+
+    // PUT ubicación a partir de coordenadas
+    @PutMapping("/{id}/coordenadas")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setCoordenadas(@PathVariable Integer id,
+                               @RequestParam Double lat,
+                               @RequestParam Double lon) {
+        restauranteService.setRestauranteCoor(id, lat, lon);
+    }
+
+
+    //-------------------------------------------------Imagen de un restaurante----------------------------------------------------------------------
 
     @PutMapping(path = "/{id}/imagen", consumes = "text/plain", produces = "text/plain")
     public String setImagen(@PathVariable Integer id, @RequestBody String url) {
@@ -99,6 +112,8 @@ public class RestauranteController {
     public void deleteImagen(@PathVariable Integer id) {
         restauranteService.deleteImagen(id);
     }
+
+    //-------------------------------------------------Carta de un restaurante----------------------------------------------------------------------
 
     // Crear carta para un restaurante
     @PostMapping("/{id}/carta")
@@ -123,4 +138,66 @@ public class RestauranteController {
     public CartaDTO obtenerCarta(@PathVariable Integer id) {
         return restauranteService.obtenerCarta(id);
     }
+
+    //-------------------------------------------------Horario de un restaurante/ estado----------------------------------------------------------------------
+
+    //PUT estado de un restaurante
+    @PutMapping("/estado/{id}")
+    public void cambiarEstado(@PathVariable Integer id){
+        restauranteService.cambiarEstado(id);
+    }
+
+    // GET /restaurante/{restauranteId}/horarios
+    @GetMapping("/{restauranteId}/horarios")
+    public ResponseEntity<List<HorarioDTO>> listarHorarios(@PathVariable Integer restauranteId) {
+        return ResponseEntity.ok(horarioService.listarHorarios(restauranteId));
+    }
+
+    // PUT /restaurante/{restauranteId}/horarios
+    @PutMapping("/{restauranteId}/horarios")
+    public ResponseEntity<List<HorarioDTO>> putHorariosSemanal(
+            @PathVariable Integer restauranteId,
+            @RequestBody HorarioRequestSemanalDTO req
+    ) {
+        return ResponseEntity.ok(horarioService.putSemanal(restauranteId, req));
+    }
+
+    // POST /restaurante/{restauranteId}/horarios
+    @PostMapping("/{restauranteId}/horarios")
+    public ResponseEntity<HorarioDTO> crearTramo(
+            @PathVariable Integer restauranteId,
+            @RequestBody HorarioRequestDTO slot
+    ) {
+        HorarioDTO dto = horarioService.crearTramo(restauranteId, slot);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    // DELETE /restaurante/{restauranteId}/horarios/{horarioId}
+    @DeleteMapping("/{restauranteId}/horarios/{horarioId}")
+    public ResponseEntity<Void> borrarTramo(
+            @PathVariable Integer restauranteId,
+            @PathVariable Integer horarioId
+    ) {
+        horarioService.borrarTramo(horarioId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // POST /restaurante/{restauranteId}/horarios/append  (bulk sin reemplazar)
+    @PostMapping("/{restauranteId}/horarios/append")
+    public ResponseEntity<List<HorarioDTO>> appendHorariosSemanal(
+            @PathVariable Integer restauranteId,
+            @RequestBody HorarioRequestSemanalDTO req
+    ) {
+        List<HorarioDTO> creados = horarioService.appendSemanal(restauranteId, req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creados);
+    }
+
+    // GET /restaurante/{id}/estado/auto
+    @GetMapping("/{id}/estado/auto")
+    public ResponseEntity<String> actualizarEstadoAuto(@PathVariable Integer id) {
+        restauranteService.actualizarEstadoSegunHorario(id);
+        return ResponseEntity.ok("Estado actualizado según horario");
+    }
+
+
 }

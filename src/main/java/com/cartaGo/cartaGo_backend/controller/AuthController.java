@@ -1,9 +1,9 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.LoginDTO;
-import com.cartaGo.cartaGo_backend.dto.LoginResponseDTO;
-import com.cartaGo.cartaGo_backend.dto.RegistroUsuarioDto;
-import com.cartaGo.cartaGo_backend.dto.UsuarioResponseDTO;
+import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.LoginDTO;
+import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.LoginResponseDTO;
+import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.RegistroUsuarioDto;
+import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.UsuarioResponseDTO;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import com.cartaGo.cartaGo_backend.security.JwtService;
 import com.cartaGo.cartaGo_backend.service.ClienteService;

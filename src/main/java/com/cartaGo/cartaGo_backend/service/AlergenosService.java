@@ -1,13 +1,12 @@
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.AlergenoDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.AlergenoDTO;
 import com.cartaGo.cartaGo_backend.entity.Alergeno;
 import com.cartaGo.cartaGo_backend.repository.AlergenoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.AlgorithmConstraints;
 import java.util.Comparator;
 import java.util.List;
 

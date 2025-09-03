@@ -1,5 +1,6 @@
-package com.cartaGo.cartaGo_backend.dto;
+package com.cartaGo.cartaGo_backend.dto.APIsDTO;
 
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

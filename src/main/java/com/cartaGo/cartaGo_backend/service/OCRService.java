@@ -1,8 +1,8 @@
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.OcrScanResponseDTO;
-import com.cartaGo.cartaGo_backend.dto.PlatoDTO;
-import com.cartaGo.cartaGo_backend.dto.PlatoRequestDTO;
+import com.cartaGo.cartaGo_backend.dto.APIsDTO.OcrScanResponseDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoRequestDTO;
 import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.repository.CartaRepository;
 import com.google.cloud.vision.v1.*;

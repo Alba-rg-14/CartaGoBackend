@@ -30,4 +30,5 @@ public interface ParticipacionSalaRepository extends JpaRepository<Participacion
     List<ParticipacionSala> findBySalaPagoIdAndClienteIdIn(Integer salaPagoId, Collection<Integer> clienteIds);
     List<ParticipacionSala> findByClienteIn(Collection<Cliente> clientes);
 
+    boolean existsBySalaPagoIdAndClienteId(Integer id, Integer id1);
 }

@@ -1,6 +1,6 @@
 package com.cartaGo.cartaGo_backend.mapper;
 
-import com.cartaGo.cartaGo_backend.dto.RestauranteDTO;
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
 
 public final class RestauranteMapper {

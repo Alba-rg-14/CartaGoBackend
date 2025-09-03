@@ -8,10 +8,12 @@ import java.time.LocalTime;
 import java.util.List;
 
 public interface HorarioRepository extends JpaRepository<Horario, Integer> {
-    List<Horario> findByRestauranteId(Integer restauranteId);
+    List<Horario> findByRestauranteIdOrderByDiaAscAperturaAsc(Integer restauranteId);
     List<Horario> findByDia(DayOfWeek dia);
-    List<Horario> findByRestauranteIdAndDia(Integer restauranteId, DayOfWeek dia);
+    List<Horario> findByRestauranteIdAndDiaOrderByAperturaAsc(Integer restauranteId, DayOfWeek dia);
     List<Horario> findByRestauranteIdAndDiaAndAperturaLessThanEqualAndCierreGreaterThan(
             Integer restauranteId, DayOfWeek dia, LocalTime ahora, LocalTime ahora2
     );
+    void deleteByRestauranteId(Integer restauranteId);
+
 }

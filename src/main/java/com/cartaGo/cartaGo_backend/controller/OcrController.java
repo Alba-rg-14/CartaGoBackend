@@ -1,8 +1,8 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.OcrScanRequestDTO;
-import com.cartaGo.cartaGo_backend.dto.OcrScanResponseDTO;
-import com.cartaGo.cartaGo_backend.dto.PlatoDTO;
+import com.cartaGo.cartaGo_backend.dto.APIsDTO.OcrScanRequestDTO;
+import com.cartaGo.cartaGo_backend.dto.APIsDTO.OcrScanResponseDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoDTO;
 import com.cartaGo.cartaGo_backend.service.OCRService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

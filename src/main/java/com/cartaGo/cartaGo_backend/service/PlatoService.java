@@ -1,11 +1,10 @@
 package com.cartaGo.cartaGo_backend.service;
 
 
-import ch.qos.logback.classic.Logger;
-import com.cartaGo.cartaGo_backend.dto.AlergenoDTO;
-import com.cartaGo.cartaGo_backend.dto.PlatoDTO;
-import com.cartaGo.cartaGo_backend.dto.PlatoRequestDTO;
-import com.cartaGo.cartaGo_backend.dto.ReordenarDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.AlergenoDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoRequestDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.ReordenarDTO;
 import com.cartaGo.cartaGo_backend.entity.Alergeno;
 import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.entity.Plato;

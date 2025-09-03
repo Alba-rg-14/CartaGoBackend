@@ -1,6 +1,6 @@
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.PlatoRequestDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoRequestDTO;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;

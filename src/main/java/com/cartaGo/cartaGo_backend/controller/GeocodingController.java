@@ -1,6 +1,6 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.GeocodingDTO;
+import com.cartaGo.cartaGo_backend.dto.APIsDTO.GeocodingDTO;
 import com.cartaGo.cartaGo_backend.service.GeocodingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

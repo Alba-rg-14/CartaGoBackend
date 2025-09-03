@@ -1,7 +1,7 @@
 // GeocodingService.java
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.GeocodingDTO;
+import com.cartaGo.cartaGo_backend.dto.APIsDTO.GeocodingDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;

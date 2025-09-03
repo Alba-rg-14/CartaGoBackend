@@ -37,6 +37,9 @@ public class SalaPago {
     @OneToMany(mappedBy = "salaPago", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ParticipacionSala> participaciones;
 
+    @Column(length = 6, unique = true, nullable = false)
+    private String codigo;
+
     public enum FormaDePago {
         pago_igualitario, pago_personalizado
     }

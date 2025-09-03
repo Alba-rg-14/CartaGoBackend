@@ -1,4 +1,4 @@
-package com.cartaGo.cartaGo_backend.dto;
+package com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

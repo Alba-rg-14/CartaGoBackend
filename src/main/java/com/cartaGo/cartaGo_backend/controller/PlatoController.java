@@ -1,11 +1,10 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.PlatoDTO;
-import com.cartaGo.cartaGo_backend.dto.PlatoRequestDTO;
-import com.cartaGo.cartaGo_backend.dto.RenameSeccionRequest;
-import com.cartaGo.cartaGo_backend.dto.ReordenarDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoRequestDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.RenameSeccionRequest;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.ReordenarDTO;
 import com.cartaGo.cartaGo_backend.service.PlatoService;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

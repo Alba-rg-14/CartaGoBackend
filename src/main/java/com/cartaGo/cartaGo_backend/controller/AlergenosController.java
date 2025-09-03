@@ -1,6 +1,6 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.AlergenoDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.AlergenoDTO;
 import com.cartaGo.cartaGo_backend.service.AlergenosService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
