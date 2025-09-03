@@ -1,8 +1,6 @@
 package com.cartaGo.cartaGo_backend.service;
 
-import com.cartaGo.cartaGo_backend.dto.FlujoDePago.AddPlatoRequestDTO;
-import com.cartaGo.cartaGo_backend.dto.FlujoDePago.AddPlatoResponseDTO;
-import com.cartaGo.cartaGo_backend.dto.FlujoDePago.SalaCreateResponseDTO;
+import com.cartaGo.cartaGo_backend.dto.FlujoDePago.*;
 import com.cartaGo.cartaGo_backend.entity.*;
 import com.cartaGo.cartaGo_backend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -178,6 +177,288 @@ public class SalaPagoService {
                 .precioUnitario(plato.getPrecio())
                 .participantes(req.getParticipantes().size())
                 .build();
+    }
+
+    @Transactional
+    public void addParticipantesDeUnPlato(Integer salaId, Integer platoSalaId, List<Integer> clienteIds) {
+        if (clienteIds == null || clienteIds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "clienteIds es obligatorio");
+        }
+
+        // sala abierta
+        SalaPago sala = salaPagoRepository.findById(salaId)
+                .orElseThrow(() -> new EntityNotFoundException("Sala no encontrada: " + salaId));
+        if (sala.getEstado() != SalaPago.EstadoSala.abierta) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La sala está cerrada");
+        }
+
+        // platoSala pertenece a la sala
+        PlatoSala ps = platoSalaRepository.findById(platoSalaId)
+                .orElseThrow(() -> new EntityNotFoundException("PlatoSala no encontrado: " + platoSalaId));
+        if (!Objects.equals(ps.getSalaPago().getId(), salaId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El plato no pertenece a esta sala");
+        }
+
+        // validar: cada cliente debe estar en ParticipacionSala de la sala
+        for (Integer clienteId : clienteIds) {
+            if (!participacionSalaRepository.existsBySalaPagoIdAndClienteId(sala.getId(), clienteId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El cliente " + clienteId + " no está en la sala");
+            }
+        }
+
+        // crear participaciones si no existen
+        for (Integer clienteId : clienteIds) {
+            if (!participacionPlatoRepository.existsByPlatoSalaIdAndClienteId(platoSalaId, clienteId)) {
+                Cliente cliente = clienteRepository.findById(clienteId)
+                        .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado: " + clienteId));
+
+                ParticipacionPlato pp = ParticipacionPlato.builder()
+                        .cliente(cliente)
+                        .platoSala(ps)
+                        .build();
+                participacionPlatoRepository.save(pp);
+            }
+        }
+    }
+
+    @Transactional
+    public void removeParticipantesDeUnPlato(Integer salaId, Integer platoSalaId, List<Integer> clienteIds) {
+        if (clienteIds == null || clienteIds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "clienteIds es obligatorio");
+        }
+
+        SalaPago sala = salaPagoRepository.findById(salaId)
+                .orElseThrow(() -> new EntityNotFoundException("Sala no encontrada: " + salaId));
+        if (sala.getEstado() != SalaPago.EstadoSala.abierta) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La sala está cerrada");
+        }
+
+        PlatoSala ps = platoSalaRepository.findById(platoSalaId)
+                .orElseThrow(() -> new EntityNotFoundException("PlatoSala no encontrado: " + platoSalaId));
+        if (!Objects.equals(ps.getSalaPago().getId(), salaId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El plato no pertenece a esta sala");
+        }
+
+        // borrar participaciones (si existen)
+        for (Integer clienteId : clienteIds) {
+            participacionPlatoRepository.deleteByPlatoSalaIdAndClienteId(platoSalaId, clienteId);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public SalaResumenDTO getResumenSala(Integer salaId) {
+        var sala = salaPagoRepository.findById(salaId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Sala no encontrada: " + salaId));
+
+        // Comensales de la sala
+        var comensales = participacionSalaRepository.findBySalaPagoId(salaId).stream()
+                .map(ps -> new ComensalDTO(ps.getCliente().getId(), ps.getCliente().getNombre())) // ajusta campo nombre
+                .toList();
+
+        // Platos de la sala
+        var platosSala = platoSalaRepository.findBySalaPagoId(salaId);
+
+        // Mapear cada PlatoSala con sus participantes y precio actual (del Plato)
+        var platos = platosSala.stream().map(ps -> {
+            var participantes = participacionPlatoRepository.findByPlatoSalaId(ps.getId()).stream()
+                    .map(pp -> new ComensalDTO(pp.getCliente().getId(), pp.getCliente().getNombre()))
+                    .toList();
+
+            var precio = ps.getPlato().getPrecio(); // precio actual desde la carta
+            return PlatoSalaResumenDTO.builder()
+                    .platoSalaId(ps.getId())
+                    .platoId(ps.getPlato().getId())
+                    .platoNombre(ps.getPlato().getNombre())
+                    .precioActual(precio)
+                    .participantes(participantes)
+                    .build();
+        }).toList();
+
+        // Subtotal (suma de precios actuales)
+        java.math.BigDecimal subtotal = platos.stream()
+                .map(PlatoSalaResumenDTO::getPrecioActual)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        return SalaResumenDTO.builder()
+                .salaId(sala.getId())
+                .codigo(sala.getCodigo())
+                .estado(sala.getEstado().name())
+                .restauranteId(sala.getRestaurante().getId())
+                .fechaCreacion(sala.getFechaCreacion())
+                .comensales(comensales)
+                .platos(platos)
+                .subtotal(subtotal)
+                .build();
+    }
+
+    @Transactional
+    public InstruccionesPagoDTO generarInstruccionesDetalladas(Integer salaId, String modoRaw) {
+        var sala = salaPagoRepository.findById(salaId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Sala no encontrada: " + salaId));
+        if (sala.getEstado() == SalaPago.EstadoSala.cerrada) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "La sala ya está cerrada");
+        }
+
+        final String modo = (modoRaw == null ? "" : modoRaw.trim().toLowerCase());
+        if (!modo.equals("igualitario") && !modo.equals("personalizado")) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "modo debe ser 'igualitario' o 'personalizado'");
+        }
+
+        // Participantes
+        var partSala = participacionSalaRepository.findBySalaPagoId(salaId);
+        if (partSala.isEmpty()) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "La sala no tiene comensales");
+        }
+        var clientes = partSala.stream().map(ParticipacionSala::getCliente).toList();
+        var clienteMap = clientes.stream().collect(java.util.stream.Collectors.toMap(Cliente::getId, c -> c));
+
+        // Platos
+        var platosSala = platoSalaRepository.findBySalaPagoId(salaId);
+        if (platosSala.isEmpty()) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "La sala no tiene platos");
+        }
+
+        // Subtotal con precio ACTUAL (no congelado)
+        java.math.BigDecimal subtotal = platosSala.stream()
+                .map(ps -> ps.getPlato().getPrecio())
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        // Acumuladores por cliente
+        java.util.Map<Integer, java.util.List<DetallePlatoClienteDTO>> detallesPorCliente = new java.util.HashMap<>();
+        java.util.Map<Integer, java.math.BigDecimal> totalPorCliente = new java.util.HashMap<>();
+        for (var c : clientes) {
+            detallesPorCliente.put(c.getId(), new java.util.ArrayList<>());
+            totalPorCliente.put(c.getId(), java.math.BigDecimal.ZERO);
+        }
+
+        final var HM = java.math.RoundingMode.HALF_UP;
+
+        if (modo.equals("personalizado")) {
+            // Reparto por plato entre sus participantes
+            for (var ps : platosSala) {
+                var precioPlato = ps.getPlato().getPrecio().setScale(2, HM);
+
+                var pps = participacionPlatoRepository.findByPlatoSalaId(ps.getId());
+                java.util.List<Cliente> consumers = pps.isEmpty()
+                        ? clientes
+                        : pps.stream().map(ParticipacionPlato::getCliente).toList();
+
+                int m = consumers.size();
+                var base = precioPlato.divide(new java.math.BigDecimal(m), 2, HM);
+
+                java.util.Map<Integer, java.math.BigDecimal> partes = new java.util.LinkedHashMap<>();
+                for (var c : consumers) partes.put(c.getId(), base);
+                ajustarCentimos(partes, precioPlato); // suma(partes)=precioPlato
+
+                for (var e : partes.entrySet()) {
+                    var cid = e.getKey();
+                    var share = e.getValue().setScale(2, HM);
+
+                    detallesPorCliente.get(cid).add(
+                            DetallePlatoClienteDTO.builder()
+                                    .platoSalaId(ps.getId())
+                                    .platoId(ps.getPlato().getId())
+                                    .platoNombre(ps.getPlato().getNombre())
+                                    .precioPlato(precioPlato)
+                                    .tuParte(share)
+                                    .build()
+                    );
+                    totalPorCliente.put(cid, totalPorCliente.get(cid).add(share));
+                }
+            }
+            // Ajuste final por seguridad (suma totales = subtotal)
+            ajustarCentimos(totalPorCliente, subtotal.setScale(2, HM));
+
+        } else { // igualitario
+            int n = clientes.size();
+            var objetivoPorCliente = subtotal.divide(new java.math.BigDecimal(n), 2, HM);
+
+            // Para dar detalle: cada plato se reparte entre TODOS (precioPlato/n)
+            for (var ps : platosSala) {
+                var precioPlato = ps.getPlato().getPrecio().setScale(2, HM);
+                var base = precioPlato.divide(new java.math.BigDecimal(n), 2, HM);
+
+                java.util.Map<Integer, java.math.BigDecimal> partes = new java.util.LinkedHashMap<>();
+                for (var c : clientes) partes.put(c.getId(), base);
+                ajustarCentimos(partes, precioPlato);
+
+                for (var e : partes.entrySet()) {
+                    var cid = e.getKey();
+                    var share = e.getValue().setScale(2, HM);
+
+                    detallesPorCliente.get(cid).add(
+                            DetallePlatoClienteDTO.builder()
+                                    .platoSalaId(ps.getId())
+                                    .platoId(ps.getPlato().getId())
+                                    .platoNombre(ps.getPlato().getNombre())
+                                    .precioPlato(precioPlato)
+                                    .tuParte(share)
+                                    .build()
+                    );
+                    totalPorCliente.put(cid, totalPorCliente.get(cid).add(share));
+                }
+            }
+            // Asegura que la suma por cliente total = subtotal/n y global = subtotal
+            ajustarCentimos(totalPorCliente, subtotal.setScale(2, HM));
+        }
+
+        // Construir porCliente (usando email desde cliente.usuario.email)
+        java.util.List<LineaInstruccionDTO> porCliente = clientes.stream().map(c -> {
+            String email = null;
+            try {
+                var u = c.getUsuario();
+                if (u != null && u.getEmail() != null) email = u.getEmail();
+            } catch (Exception ignore) {}
+            return new LineaInstruccionDTO(
+                    c.getId(),
+                    c.getNombre(),      // cambia si tu campo se llama distinto
+                    email,
+                    totalPorCliente.get(c.getId()).setScale(2, HM),
+                    detallesPorCliente.get(c.getId())
+            );
+        }).toList();
+
+        // Cerrar sala y fijar modo
+        sala.setFormaDePago(modo.equals("igualitario")
+                ? SalaPago.FormaDePago.pago_igualitario
+                : SalaPago.FormaDePago.pago_personalizado);
+        sala.setEstado(SalaPago.EstadoSala.cerrada);
+        salaPagoRepository.save(sala);
+
+        return InstruccionesPagoDTO.builder()
+                .salaId(sala.getId())
+                .restauranteNombre(sala.getRestaurante().getNombre())
+                .fechaGeneracion(java.time.LocalDateTime.now())
+                .modo(modo) // "igualitario" | "personalizado"
+                .subtotal(subtotal.setScale(2, HM))
+                .porCliente(porCliente)
+                .build();
+    }
+
+    /** Reparte +/- 0.01 para que la suma de valores coincida EXACTAMENTE con target */
+    private void ajustarCentimos(java.util.Map<Integer, java.math.BigDecimal> valores, java.math.BigDecimal target) {
+        var HM = java.math.RoundingMode.HALF_UP;
+        java.math.BigDecimal suma = valores.values().stream()
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add)
+                .setScale(2, HM);
+        java.math.BigDecimal objetivo = target.setScale(2, HM);
+        long diff = objetivo.subtract(suma).movePointRight(2).longValue(); // céntimos
+
+        if (diff == 0) return;
+        var keys = new java.util.ArrayList<>(valores.keySet());
+        int i = 0;
+        while (diff != 0) {
+            Integer k = keys.get(i % keys.size());
+            var v = valores.get(k);
+            if (diff > 0) { v = v.add(new java.math.BigDecimal("0.01")); diff--; }
+            else {
+                if (v.compareTo(new java.math.BigDecimal("0.01")) >= 0) { v = v.subtract(new java.math.BigDecimal("0.01")); diff++; }
+                else { i++; continue; }
+            }
+            valores.put(k, v);
+            i++;
+        }
     }
 
 

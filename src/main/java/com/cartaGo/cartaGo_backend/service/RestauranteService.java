@@ -9,6 +9,7 @@ import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteUpdateDTO;
 import com.cartaGo.cartaGo_backend.entity.Carta;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
+import com.cartaGo.cartaGo_backend.repository.CartaRepository;
 import com.cartaGo.cartaGo_backend.repository.HorarioRepository;
 import com.cartaGo.cartaGo_backend.repository.RestauranteRepository;
 import com.cartaGo.cartaGo_backend.utils.GeoUtils;
@@ -32,6 +33,8 @@ public class RestauranteService {
     private final RestauranteRepository restauranteRepository;
     private final GeocodingService geocodingService;
     private final HorarioRepository horarioRepository;
+    private final CartaRepository cartaRepository;
+    private final PlatoService platoService;
 
     //Crear restaurante dado un usuario y nombre
     public Restaurante crearRestaurante(Usuario usuario, String nombre){
@@ -54,12 +57,17 @@ public class RestauranteService {
 
     }
 
-    public RestauranteDTO getRestaurantesPreviewDTOByNombre(String name){
-
+    public RestaurantePreviewDTO getRestaurantesPreviewDTOByNombre(String name){
         return restauranteRepository.findByNombreContainingIgnoreCase(name)
-                .map(this::mapToDto)
+                .map(this::mapToPreviewDto)
                 .orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con nombre: " + name));
 
+    }
+
+    public RestauranteDTO getRestauranteInfoById(Integer restauranteId){
+        return restauranteRepository.findById(restauranteId)
+                .map(this::mapToDto)
+                .orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con id: " + restauranteId));
     }
 
 
@@ -254,24 +262,8 @@ public class RestauranteService {
     }
 
     @Transactional(readOnly = true)
-    public CartaDTO obtenerCarta(Integer restauranteId) {
-        Restaurante r = restauranteRepository.findById(restauranteId)
-                .orElseThrow(() -> new IllegalArgumentException("Restaurante no encontrado"));
-        Carta c = r.getCarta();
-        if (c == null) return null;
-
-        return CartaDTO.builder()
-                .id(c.getId())
-                .restauranteId(r.getId())
-                .platos(c.getPlatos().stream()
-                        .map(p -> PlatoDTO.builder()
-                                .id(p.getId())
-                                .nombre(p.getNombre())
-                                .descripcion(p.getDescripcion())
-                                .precio(p.getPrecio())
-                                .build())
-                        .toList())
-                .build();
+    public List<PlatoDTO> obtenerCarta(Integer restauranteId) {
+        return platoService.listarPorCarta(cartaRepository.findByRestauranteId(restauranteId).get().getId(), null);
     }
 
     @Transactional

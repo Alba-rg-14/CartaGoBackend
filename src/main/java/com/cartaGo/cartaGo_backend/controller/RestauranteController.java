@@ -1,6 +1,7 @@
 package com.cartaGo.cartaGo_backend.controller;
 
 import com.cartaGo.cartaGo_backend.dto.CartaDTO.CartaDTO;
+import com.cartaGo.cartaGo_backend.dto.CartaDTO.PlatosDTO.PlatoDTO;
 import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioDTO;
 import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioRequestDTO;
 import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioRequestSemanalDTO;
@@ -46,7 +47,7 @@ public class RestauranteController {
 
     //GET preview por nombre
     @GetMapping("preview/{nombre}")
-    public RestauranteDTO getByNombre(@PathVariable String nombre){
+    public RestaurantePreviewDTO getByNombre(@PathVariable String nombre){
        return restauranteService.getRestaurantesPreviewDTOByNombre(nombre);
     }
 
@@ -54,6 +55,11 @@ public class RestauranteController {
     @GetMapping("preview/abiertos")
     public List<RestaurantePreviewDTO> getAbiertos(){
         return restauranteService.getRestaurantesPreviewDTOAbiertos();
+    }
+
+    @GetMapping("/{id}/info")
+    public RestauranteDTO getRestauranteInfo(@PathVariable Integer id){
+        return restauranteService.getRestauranteInfoById(id);
     }
 
     //PUT restaurante
@@ -115,27 +121,27 @@ public class RestauranteController {
 
     //-------------------------------------------------Carta de un restaurante----------------------------------------------------------------------
 
-    // Crear carta para un restaurante
+    // POST carta para un restaurante
     @PostMapping("/{id}/carta")
     public void crearCarta(@PathVariable Integer id) {
         restauranteService.crearCarta(id);
     }
 
-    // Reemplazar carta (borra la antigua y pone una nueva)
+    // PUT carta (borra la antigua y pone una nueva)
     @PutMapping("/{id}/carta")
     public void reemplazarCarta(@PathVariable Integer id) {
         restauranteService.reemplazarCarta(id);
     }
 
-    // Eliminar carta
+    // DELETE carta
     @DeleteMapping("/{id}/carta")
     public void quitarCarta(@PathVariable Integer id) {
         restauranteService.quitarCarta(id);
     }
 
-    // Obtener carta
+    // GET carta
     @GetMapping("/{id}/carta")
-    public CartaDTO obtenerCarta(@PathVariable Integer id) {
+    public List<PlatoDTO> obtenerCarta(@PathVariable Integer id) {
         return restauranteService.obtenerCarta(id);
     }
 

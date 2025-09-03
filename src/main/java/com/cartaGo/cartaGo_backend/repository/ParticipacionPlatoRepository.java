@@ -21,4 +21,8 @@ public interface ParticipacionPlatoRepository extends JpaRepository<Participacio
     List<ParticipacionPlato> findByClienteIdIn(Collection<Integer> clienteIds);
     List<ParticipacionPlato> findByPlatoSalaIdAndClienteIdIn(Integer platoSalaId, Collection<Integer> clienteIds);
 
+    boolean existsByPlatoSalaIdAndClienteId(Integer platoSalaId, Integer clienteId);
+
+    void deleteByPlatoSalaIdAndClienteId(Integer platoSalaId, Integer clienteId);
+
 }
