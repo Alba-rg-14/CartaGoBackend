@@ -1,12 +1,10 @@
 package com.cartaGo.cartaGo_backend.controller;
 
-import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.LoginDTO;
-import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.LoginResponseDTO;
-import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.RegistroUsuarioDto;
-import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.UsuarioResponseDTO;
+import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.*;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import com.cartaGo.cartaGo_backend.security.JwtService;
 import com.cartaGo.cartaGo_backend.service.ClienteService;
+import com.cartaGo.cartaGo_backend.service.MailService;
 import com.cartaGo.cartaGo_backend.service.RestauranteService;
 import com.cartaGo.cartaGo_backend.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -26,6 +24,7 @@ public class AuthController {
     private final UsuarioService usuarioService;
     private final ClienteService clienteService;
     private final RestauranteService restauranteService;
+    private final MailService mailService;
 
     @PostMapping("/register")
     public ResponseEntity<UsuarioResponseDTO> register(@RequestBody @Valid RegistroUsuarioDto dto){
@@ -55,6 +54,15 @@ public class AuthController {
         return ResponseEntity.ok(res);
     }
 
+    @PostMapping("/change-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(Authentication auth,
+                               @RequestBody @Valid ChangePasswordRequestDTO req) {
+        if (auth == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        usuarioService.changePassword(auth.getName(), req.getCurrentPassword(), req.getNewPassword());
+    }
+
+
 
     @GetMapping("/me")
     public ResponseEntity<MeDto> me(Authentication auth) {
@@ -65,5 +73,45 @@ public class AuthController {
         return ResponseEntity.ok(new MeDto(u.getId(), u.getEmail(), u.getRol().name()));
     }
     record MeDto(Integer id, String email, String role) {}
+
+    // DTOs simples
+    public record ResetPasswordRequest(String email) {}
+    public record ResetPasswordConfirmRequest(String token, String newPassword) {}
+
+    @PostMapping("/reset-password/request")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void requestReset(@RequestBody ResetPasswordRequest req) {
+        // 1) buscar usuario (si no existe, devolver 204 igualmente para no filtrar emails)
+        usuarioService.findByEmail(req.email()); // no hace falta usar el return
+
+        // 2) generar token tiempo limitado (p.ej. 15 min)
+        String token = jwtService.generateResetPasswordToken(req.email(), 15);
+
+        // 3) enviar email con enlace
+        String resetLink = "https://tu-frontend/reset?token=" + token;
+        mailService.send(
+                req.email(),
+                "Recupera tu contraseña",
+                """
+                Hola,
+                
+                Has solicitado restablecer tu contraseña. Pulsa este enlace:
+                %s
+                
+                Si no fuiste tú, ignora este correo.
+                """.formatted(resetLink)
+        );
+    }
+
+    @PostMapping("/reset-password/confirm")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmReset(@RequestBody ResetPasswordConfirmRequest req) {
+        if (req.newPassword() == null || req.newPassword().length() < 8) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Contraseña mínima 8 caracteres");
+        }
+        String email = jwtService.validateAndGetEmailFromResetToken(req.token());
+        usuarioService.forceSetPasswordByEmail(email, req.newPassword());
+    }
+
 
 }

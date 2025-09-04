@@ -28,6 +28,7 @@ public class FlujoDePagoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
+    //Unirse a sala de pago
     @PostMapping("/{restauranteId}/sala-pago/join")
     public ResponseEntity<SalaCreateResponseDTO> unirseASala(
             @PathVariable Integer restauranteId,
@@ -38,7 +39,7 @@ public class FlujoDePagoController {
         return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 
-    // FlujoDePagoController.java
+    // Añadir plato a sala de pago
     @PostMapping("/sala-pago/{salaId}/platos")
     public ResponseEntity<AddPlatoResponseDTO> addPlato(
             @PathVariable Integer salaId,
@@ -47,6 +48,29 @@ public class FlujoDePagoController {
         var dto = salaPagoService.addPlato(salaId, req);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
+
+    // Eliminar plato de una sala
+    @DeleteMapping("/sala-pago/{salaId}/platos/{platoSalaId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePlato(
+            @PathVariable Integer salaId,
+            @PathVariable Integer platoSalaId
+    ) {
+        salaPagoService.deletePlatoDeSala(salaId, platoSalaId);
+    }
+
+
+    //Actualizar participaciones de un platosala
+    @PutMapping("/sala-pago/{salaId}/platos/{platoSalaId}/participantes")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void replaceParticipantes(
+            @PathVariable Integer salaId,
+            @PathVariable Integer platoSalaId,
+            @RequestBody ParticipantesRequestDTO req
+    ) {
+        salaPagoService.replaceParticipantesDeUnPlato(salaId, platoSalaId, req.getClienteIds());
+    }
+
 
     // Añadir participantes a un plato
     @PostMapping("/sala-pago/{salaId}/platos/{platoSalaId}/participantes")

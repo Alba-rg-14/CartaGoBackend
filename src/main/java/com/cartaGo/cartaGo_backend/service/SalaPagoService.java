@@ -14,8 +14,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -121,7 +121,6 @@ public class SalaPagoService {
                 .build();
     }
 
-    // service/SalaPagoService.java (añade esto)
     @Transactional
     public AddPlatoResponseDTO addPlato(Integer salaId, AddPlatoRequestDTO req) {
         if (req == null || req.getPlatoId() == null || req.getParticipantes() == null || req.getParticipantes().isEmpty()) {
@@ -178,6 +177,96 @@ public class SalaPagoService {
                 .participantes(req.getParticipantes().size())
                 .build();
     }
+
+    @Transactional
+    public void deletePlatoDeSala(Integer salaId, Integer platoSalaId) {
+        // 1) sala abierta
+        SalaPago sala = salaPagoRepository.findById(salaId)
+                .orElseThrow(() -> new EntityNotFoundException("Sala no encontrada: " + salaId));
+        if (sala.getEstado() != SalaPago.EstadoSala.abierta) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La sala está cerrada");
+        }
+
+        // 2) platoSala existe y pertenece a la sala
+        PlatoSala ps = platoSalaRepository.findById(platoSalaId)
+                .orElseThrow(() -> new EntityNotFoundException("PlatoSala no encontrado: " + platoSalaId));
+        if (!Objects.equals(ps.getSalaPago().getId(), salaId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El plato no pertenece a esta sala");
+        }
+
+        // 3) borrar dependencias (participaciones del plato)
+        participacionPlatoRepository.deleteByPlatoSalaId(platoSalaId);
+
+        // 4) borrar el PlatoSala
+        platoSalaRepository.deleteById(platoSalaId);
+    }
+
+
+    @Transactional
+    public void replaceParticipantesDeUnPlato(Integer salaId, Integer platoSalaId, List<Integer> desiredClienteIds) {
+        // Normaliza entrada (permite lista vacía => dejar a 0 participantes)
+        if (desiredClienteIds == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "clienteIds es obligatorio (puede ser lista vacía)");
+        }
+
+        // Quita nulls y duplicados
+        Set<Integer> desired = desiredClienteIds.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        // Validaciones: sala abierta
+        SalaPago sala = salaPagoRepository.findById(salaId)
+                .orElseThrow(() -> new EntityNotFoundException("Sala no encontrada: " + salaId));
+        if (sala.getEstado() != SalaPago.EstadoSala.abierta) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La sala está cerrada");
+        }
+
+        // Validación: platoSala existe y pertenece a la sala
+        PlatoSala ps = platoSalaRepository.findById(platoSalaId)
+                .orElseThrow(() -> new EntityNotFoundException("PlatoSala no encontrado: " + platoSalaId));
+        if (!Objects.equals(ps.getSalaPago().getId(), salaId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El plato no pertenece a esta sala");
+        }
+
+        // Validación: todos los desired deben estar en la sala (ParticipacionSala)
+        for (Integer clienteId : desired) {
+            if (!participacionSalaRepository.existsBySalaPagoIdAndClienteId(sala.getId(), clienteId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El cliente " + clienteId + " no está en la sala");
+            }
+        }
+
+        // Estado actual
+        Set<Integer> current = new HashSet<>(participacionPlatoRepository.findClienteIdsByPlatoSalaId(platoSalaId));
+
+        // Diferencias
+        Set<Integer> toAdd = new HashSet<>(desired);
+        toAdd.removeAll(current);
+
+        Set<Integer> toRemove = new HashSet<>(current);
+        toRemove.removeAll(desired);
+
+        // Añadir los que faltan
+        if (!toAdd.isEmpty()) {
+            List<ParticipacionPlato> nuevos = new ArrayList<>(toAdd.size());
+            for (Integer clienteId : toAdd) {
+                Cliente cliente = clienteRepository.findById(clienteId)
+                        .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado: " + clienteId));
+                ParticipacionPlato pp = ParticipacionPlato.builder()
+                        .cliente(cliente)
+                        .platoSala(ps)
+                        .build();
+                nuevos.add(pp);
+            }
+            participacionPlatoRepository.saveAll(nuevos);
+        }
+
+        // Eliminar los que sobran
+        if (!toRemove.isEmpty()) {
+            participacionPlatoRepository.deleteByPlatoSalaIdAndClienteIdIn(platoSalaId, toRemove);
+        }
+    }
+
 
     @Transactional
     public void addParticipantesDeUnPlato(Integer salaId, Integer platoSalaId, List<Integer> clienteIds) {

@@ -3,6 +3,9 @@ package com.cartaGo.cartaGo_backend.repository;
 import com.cartaGo.cartaGo_backend.entity.Cliente;
 import com.cartaGo.cartaGo_backend.entity.ParticipacionPlato;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,4 +28,15 @@ public interface ParticipacionPlatoRepository extends JpaRepository<Participacio
 
     void deleteByPlatoSalaIdAndClienteId(Integer platoSalaId, Integer clienteId);
 
+    @Query("select pp.cliente.id from ParticipacionPlato pp where pp.platoSala.id = :platoSalaId")
+    List<Integer> findClienteIdsByPlatoSalaId(@Param("platoSalaId") Integer platoSalaId);
+
+    @Modifying
+    @Query("delete from ParticipacionPlato pp where pp.platoSala.id = :platoSalaId and pp.cliente.id in :clienteIds")
+    void deleteByPlatoSalaIdAndClienteIdIn(@Param("platoSalaId") Integer platoSalaId,
+                                           @Param("clienteIds") Collection<Integer> clienteIds);
+
+    @Modifying
+    @Query("delete from ParticipacionPlato pp where pp.platoSala.id = :platoSalaId")
+    void deleteByPlatoSalaId(@Param("platoSalaId") Integer platoSalaId);
 }

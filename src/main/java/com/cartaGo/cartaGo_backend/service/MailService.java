@@ -7,11 +7,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
 public class MailService {
     private final JavaMailSender mailSender;
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     /** Envía a TODOS los clientes de la sala, usando el email que venga en cada LineaInstruccionDTO */
     public void enviarInstruccionesATodos(InstruccionesPagoDTO dto) {
@@ -36,7 +38,7 @@ public class MailService {
     private String renderCliente(InstruccionesPagoDTO dto, LineaInstruccionDTO cliente) {
         StringBuilder sb = new StringBuilder();
         sb.append("Restaurante: ").append(safe(dto.getRestauranteNombre())).append("\n");
-        sb.append("Fecha: ").append(dto.getFechaGeneracion()).append("\n");
+        sb.append("Fecha: ").append(dto.getFechaGeneracion().format(formatter)).append("\n");
         sb.append("Modo de pago: ").append(safe(dto.getModo())).append("\n");
         sb.append("Total de la sala: ").append(dto.getSubtotal()).append(" €\n\n");
 
@@ -55,4 +57,12 @@ public class MailService {
     }
 
     private String safe(String s) { return s == null ? "" : s; }
+
+    public void send(String to, String subject, String text) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(to);
+        msg.setSubject(subject);
+        msg.setText(text);
+        mailSender.send(msg);
+    }
 }

@@ -4,8 +4,11 @@ import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.RegistroUsuarioDto;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import com.cartaGo.cartaGo_backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -46,5 +49,31 @@ public class UsuarioService {
         var encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
         return encoder.matches(passwordEnClaro, u.getPassword_hash());
     }
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        Usuario u = usuarioRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+
+        var encoder = new BCryptPasswordEncoder();
+        if (!encoder.matches(currentPassword, u.getPassword_hash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Contraseña actual incorrecta");
+        }
+
+        u.setPassword_hash(encoder.encode(newPassword));
+        usuarioRepository.save(u);
+    }
+
+
+    @Transactional
+    public void forceSetPasswordByEmail(String email, String newPassword) {
+        Usuario u = usuarioRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        var encoder = new BCryptPasswordEncoder();
+        u.setPassword_hash(encoder.encode(newPassword));
+        usuarioRepository.save(u);
+    }
+
+
 
 }

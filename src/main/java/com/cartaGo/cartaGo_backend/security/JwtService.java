@@ -57,4 +57,23 @@ public class JwtService {
     }
 
     public long getExpiresSeconds() { return expiresMinutes * 60; }
+
+    public String generateResetPasswordToken(String email, long minutes) {
+        Instant now = Instant.now();
+        Instant exp = now.plusSeconds(minutes * 60);
+        return JWT.create()
+                .withSubject(email)
+                .withClaim("typ", "reset")         // propósito
+                .withIssuedAt(Date.from(now))
+                .withExpiresAt(Date.from(exp))
+                .sign(algorithm);
+    }
+
+    public String validateAndGetEmailFromResetToken(String token) {
+        DecodedJWT jwt = JWT.require(algorithm).build().verify(token);
+        String typ = jwt.getClaim("typ").asString();
+        if (!"reset".equals(typ)) throw new IllegalArgumentException("Token no es de reset");
+        return jwt.getSubject(); // email
+    }
+
 }
