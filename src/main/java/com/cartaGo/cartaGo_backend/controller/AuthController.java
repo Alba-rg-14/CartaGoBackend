@@ -94,7 +94,7 @@ public class AuthController {
         String token = jwtService.generateResetPasswordToken(req.email(), 15);
 
         // 3) enviar email con enlace
-        String resetLink = "https://tu-frontend/reset?token=" + token;
+        String resetLink = "cartago://auth/reset-confirm?token=" + token;
         mailService.send(
                 req.email(),
                 "Recupera tu contraseña",
