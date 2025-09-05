@@ -18,7 +18,8 @@ public class CorsConfig {
                 "http://localhost:8081",
                 "http://127.0.0.1:8081",
                 "https://*.expo.dev",
-                "https://TU-DOMINIO.vercel.app" // ← pon aquí tu dominio de Vercel
+                "https://*.vercel.app",
+                "https://cartago-44hbc017m-albas-projects-ec9d8895.vercel.app"
         ));
         config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

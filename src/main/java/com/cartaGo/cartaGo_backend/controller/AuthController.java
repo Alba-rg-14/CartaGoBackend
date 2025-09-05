@@ -94,7 +94,7 @@ public class AuthController {
         String token = jwtService.generateResetPasswordToken(req.email(), 15);
 
         // 3) enviar email con enlace
-        String resetLink = "cartago://auth/reset-confirm?token=" + token;
+        String resetLink = "https://cartago-44hbc017m-albas-projects-ec9d8895.vercel.app/auth/reset-confirm?token=" + token;
         mailService.send(
                 req.email(),
                 "Recupera tu contraseña",
