@@ -14,7 +14,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.Authentication;
-
+@CrossOrigin(
+        origins = {
+                "http://localhost:8081",
+                "http://127.0.0.1:8081",
+                "https://*.expo.dev"
+        }
+)
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
