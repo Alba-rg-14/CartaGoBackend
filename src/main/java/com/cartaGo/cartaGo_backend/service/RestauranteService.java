@@ -57,11 +57,13 @@ public class RestauranteService {
 
     }
 
-    public List<RestaurantePreviewDTO> getRestaurantesPreviewDTOByNombre(String name){
-        return restauranteRepository.findAllByNombreContainingIgnoreCase(name).stream()
-                .map(this::mapToPreviewDto).toList();
-
+    public List<RestaurantePreviewDTO> getRestaurantesPreviewDTOByNombre(String name) {
+        String filtro = name == null ? "" : name.trim();
+        return restauranteRepository.findAllByNombreContainingIgnoreCase(filtro).stream()
+                .map(this::mapToPreviewDto)
+                .toList(); // Java 17+: OK
     }
+
 
     public RestauranteDTO getRestauranteInfoById(Integer restauranteId){
         return restauranteRepository.findById(restauranteId)
