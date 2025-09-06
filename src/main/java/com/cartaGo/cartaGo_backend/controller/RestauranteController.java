@@ -47,7 +47,7 @@ public class RestauranteController {
 
     //GET preview por nombre
     @GetMapping("preview/{nombre}")
-    public RestaurantePreviewDTO getByNombre(@PathVariable String nombre){
+    public List<RestaurantePreviewDTO> getByNombre(@PathVariable String nombre){
        return restauranteService.getRestaurantesPreviewDTOByNombre(nombre);
     }
 

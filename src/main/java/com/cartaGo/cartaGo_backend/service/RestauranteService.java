@@ -57,10 +57,9 @@ public class RestauranteService {
 
     }
 
-    public RestaurantePreviewDTO getRestaurantesPreviewDTOByNombre(String name){
-        return restauranteRepository.findByNombreContainingIgnoreCase(name)
-                .map(this::mapToPreviewDto)
-                .orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con nombre: " + name));
+    public List<RestaurantePreviewDTO> getRestaurantesPreviewDTOByNombre(String name){
+        return restauranteRepository.findAllByNombreContainingIgnoreCase(name).stream()
+                .map(this::mapToPreviewDto).toList();
 
     }
 

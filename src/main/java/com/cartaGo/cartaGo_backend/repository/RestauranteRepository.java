@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface RestauranteRepository extends JpaRepository<Restaurante, Integer> {
     Optional<Restaurante> findByNombreContainingIgnoreCase(String nombre);
     Optional<Restaurante> findByEstado(Restaurante.Estado estado);
+    List<Restaurante> findAllByNombreContainingIgnoreCase(String nombre);
     @Query("""
            select distinct r
            from Restaurante r
