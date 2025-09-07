@@ -550,5 +550,137 @@ public class SalaPagoService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public InstruccionesPagoDTO getInstruccionesDetalladas(Integer salaId) {
+        var sala = salaPagoRepository.findById(salaId)
+                .orElseThrow(() -> new EntityNotFoundException("Sala no encontrada: " + salaId));
+
+        // Debe haber una forma de pago elegida (la fijaste cuando se generaron)
+        String modo = switch (sala.getFormaDePago()) {
+            case pago_igualitario    -> "igualitario";
+            case pago_personalizado  -> "personalizado";
+            default -> null;
+        };
+        if (modo == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La sala no tiene instrucciones generadas todavía");
+        }
+
+        // Misma lógica que en generarInstruccionesDetalladas, pero SIN cerrar/guardar sala
+        return calcularInstruccionesDTO(sala, modo);
+    }
+
+    private InstruccionesPagoDTO calcularInstruccionesDTO(SalaPago sala, String modo) {
+        final var HM = java.math.RoundingMode.HALF_UP;
+
+        // Participantes
+        var partSala = participacionSalaRepository.findBySalaPagoId(sala.getId());
+        var clientes = partSala.stream().map(ParticipacionSala::getCliente).toList();
+        if (clientes.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La sala no tiene comensales");
+        }
+
+        // Platos
+        var platosSala = platoSalaRepository.findBySalaPagoId(sala.getId());
+        if (platosSala.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La sala no tiene platos");
+        }
+
+        // Subtotal con precio ACTUAL (igual que tu método original)
+        java.math.BigDecimal subtotal = platosSala.stream()
+                .map(ps -> ps.getPlato().getPrecio())
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        Map<Integer, List<DetallePlatoClienteDTO>> detallesPorCliente = new HashMap<>();
+        Map<Integer, java.math.BigDecimal> totalPorCliente = new HashMap<>();
+        for (var c : clientes) {
+            detallesPorCliente.put(c.getId(), new ArrayList<>());
+            totalPorCliente.put(c.getId(), java.math.BigDecimal.ZERO);
+        }
+
+        if ("personalizado".equals(modo)) {
+            for (var ps : platosSala) {
+                var precioPlato = ps.getPlato().getPrecio().setScale(2, HM);
+                var pps = participacionPlatoRepository.findByPlatoSalaId(ps.getId());
+                List<Cliente> consumers = pps.isEmpty()
+                        ? clientes
+                        : pps.stream().map(ParticipacionPlato::getCliente).toList();
+
+                int m = consumers.size();
+                var base = precioPlato.divide(new java.math.BigDecimal(m), 2, HM);
+
+                Map<Integer, java.math.BigDecimal> partes = new LinkedHashMap<>();
+                for (var c : consumers) partes.put(c.getId(), base);
+                ajustarCentimos(partes, precioPlato);
+
+                for (var e : partes.entrySet()) {
+                    var cid = e.getKey();
+                    var share = e.getValue().setScale(2, HM);
+                    detallesPorCliente.get(cid).add(
+                            DetallePlatoClienteDTO.builder()
+                                    .platoSalaId(ps.getId())
+                                    .platoId(ps.getPlato().getId())
+                                    .platoNombre(ps.getPlato().getNombre())
+                                    .precioPlato(precioPlato)
+                                    .tuParte(share)
+                                    .build()
+                    );
+                    totalPorCliente.put(cid, totalPorCliente.get(cid).add(share));
+                }
+            }
+            ajustarCentimos(totalPorCliente, subtotal.setScale(2, HM));
+        } else { // igualitario
+            int n = clientes.size();
+            for (var ps : platosSala) {
+                var precioPlato = ps.getPlato().getPrecio().setScale(2, HM);
+                var base = precioPlato.divide(new java.math.BigDecimal(n), 2, HM);
+
+                Map<Integer, java.math.BigDecimal> partes = new LinkedHashMap<>();
+                for (var c : clientes) partes.put(c.getId(), base);
+                ajustarCentimos(partes, precioPlato);
+
+                for (var e : partes.entrySet()) {
+                    var cid = e.getKey();
+                    var share = e.getValue().setScale(2, HM);
+                    detallesPorCliente.get(cid).add(
+                            DetallePlatoClienteDTO.builder()
+                                    .platoSalaId(ps.getId())
+                                    .platoId(ps.getPlato().getId())
+                                    .platoNombre(ps.getPlato().getNombre())
+                                    .precioPlato(precioPlato)
+                                    .tuParte(share)
+                                    .build()
+                    );
+                    totalPorCliente.put(cid, totalPorCliente.get(cid).add(share));
+                }
+            }
+            ajustarCentimos(totalPorCliente, subtotal.setScale(2, HM));
+        }
+
+        // Construir DTO (mismo bloque que ya tienes)
+        var porCliente = clientes.stream().map(c -> {
+            String email = null;
+            try {
+                var u = c.getUsuario();
+                if (u != null && u.getEmail() != null) email = u.getEmail();
+            } catch (Exception ignore) {}
+            return new LineaInstruccionDTO(
+                    c.getId(),
+                    c.getNombre(),
+                    email,
+                    totalPorCliente.get(c.getId()).setScale(2, HM),
+                    detallesPorCliente.get(c.getId())
+            );
+        }).toList();
+
+        return InstruccionesPagoDTO.builder()
+                .salaId(sala.getId())
+                .restauranteNombre(sala.getRestaurante().getNombre())
+                .fechaGeneracion(java.time.LocalDateTime.now())
+                .modo(modo)
+                .subtotal(subtotal.setScale(2, HM))
+                .porCliente(porCliente)
+                .build();
+    }
 
 }

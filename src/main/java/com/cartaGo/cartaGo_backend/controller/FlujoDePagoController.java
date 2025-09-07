@@ -137,7 +137,10 @@ public class FlujoDePagoController {
         return ResponseEntity.ok().build();
     }
 
-
+    @GetMapping("/sala-pago/{salaId}/instrucciones")
+    public ResponseEntity<InstruccionesPagoDTO> getInstrucciones(@PathVariable Integer salaId) {
+        return ResponseEntity.ok(salaPagoService.getInstruccionesDetalladas(salaId));
+    }
 
 
 }
