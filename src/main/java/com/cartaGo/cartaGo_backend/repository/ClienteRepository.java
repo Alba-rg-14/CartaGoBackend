@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface ClienteRepository extends JpaRepository<Cliente,Integer > {
     Optional<Cliente> findByNombreIgnoreCase(String nombre);
+    Optional<Cliente> findByUsuarioId(Integer usuarioId);
 }

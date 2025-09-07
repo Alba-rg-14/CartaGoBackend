@@ -119,5 +119,10 @@ public class AuthController {
         usuarioService.forceSetPasswordByEmail(email, req.newPassword());
     }
 
+    @GetMapping("/{usuarioId}/cliente")
+    public ClienteDTO getClienteByUsuario(@PathVariable Integer usuarioId) {
+        return clienteService.getByUsuarioId(usuarioId);
+    }
+
 
 }
