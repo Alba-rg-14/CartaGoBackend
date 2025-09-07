@@ -23,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import static com.cartaGo.cartaGo_backend.mapper.RestauranteMapper.toDTO;
@@ -35,6 +36,8 @@ public class RestauranteService {
     private final HorarioRepository horarioRepository;
     private final CartaRepository cartaRepository;
     private final PlatoService platoService;
+    private static final ZoneId ZONA = ZoneId.of("Europe/Madrid");
+
 
     //Crear restaurante dado un usuario y nombre
     public Restaurante crearRestaurante(Usuario usuario, String nombre){
@@ -142,8 +145,8 @@ public class RestauranteService {
 
 
     private RestauranteDTO mapToDto(Restaurante r) {
-        // 1) calcular estado "abierto/cerrado" AHORA (día y hora actuales)
-        var ahora = java.time.LocalDateTime.now();
+        // 1) calcular estado "abierto/cerrado" AHORA (día y hora actuales en nuestra zona horaria)
+        var ahora = java.time.ZonedDateTime.now(ZONA);
         var dia   = ahora.getDayOfWeek();
         var hora  = ahora.toLocalTime();
 
@@ -160,13 +163,13 @@ public class RestauranteService {
                 .map(h -> com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioDTO.builder()
                         .id(h.getId())
                         .dia(h.getDia())
-                        .apertura(h.getApertura().format(HM))  // <-- formatear a String
-                        .cierre(h.getCierre().format(HM))      // <-- formatear a String
+                        .apertura(h.getApertura().format(HM))
+                        .cierre(h.getCierre().format(HM))
                         .build()
                 )
                 .toList();
 
-        // 3) devolver tu RestauranteDTO con estado calculado + horarios
+        // 3) devolver RestauranteDTO con estado calculado + horarios
         return com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO.builder()
                 .id(r.getId())
                 .nombre(r.getNombre())
