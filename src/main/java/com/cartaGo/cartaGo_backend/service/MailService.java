@@ -3,11 +3,13 @@ package com.cartaGo.cartaGo_backend.service;
 import com.cartaGo.cartaGo_backend.dto.FlujoDePago.DetallePlatoClienteDTO;
 import com.cartaGo.cartaGo_backend.dto.FlujoDePago.InstruccionesPagoDTO;
 import com.cartaGo.cartaGo_backend.dto.FlujoDePago.LineaInstruccionDTO;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.format.DateTimeFormatter;
@@ -24,6 +26,36 @@ public class MailService {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final String BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
+
+    @PostConstruct
+    public void initBrevo() {
+        if (brevoApiKey != null) {
+            brevoApiKey = brevoApiKey.trim().replace("\"", "");
+        }
+        String masked = (brevoApiKey == null || brevoApiKey.isBlank())
+                ? "NULL"
+                : brevoApiKey.substring(0, Math.min(8, brevoApiKey.length())) + "...";
+        log.info("Brevo API key cargada: {}", masked);
+        log.info("From configurado: {} <{}>", fromName, fromEmail);
+    }
+
+    @GetMapping("/_brevo/ping")
+    public ResponseEntity<String> brevoPing() {
+        HttpHeaders h = new HttpHeaders();
+        h.set("api-key", brevoApiKey);
+        h.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+        HttpEntity<Void> entity = new HttpEntity<>(null, h);
+
+        ResponseEntity<String> res = new RestTemplate().exchange(
+                "https://api.brevo.com/v3/account",
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
+        log.info("/v3/account -> status {}", res.getStatusCodeValue());
+        return ResponseEntity.status(res.getStatusCode()).body(res.getBody());
+    }
+
 
     /** Envía a TODOS los clientes de la sala */
     public void enviarInstruccionesATodos(InstruccionesPagoDTO dto) {
