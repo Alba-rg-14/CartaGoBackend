@@ -1,5 +1,6 @@
 package com.cartaGo.cartaGo_backend.controller;
 
+import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.*;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import com.cartaGo.cartaGo_backend.security.JwtService;
@@ -125,4 +126,8 @@ public class AuthController {
     }
 
 
+    @GetMapping("/{usuarioId}/restaurante")
+    public RestauranteDTO getRestauranteByUsuario(@PathVariable Integer usuarioId) {
+        return restauranteService.getByUsuarioId(usuarioId);
+    }
 }

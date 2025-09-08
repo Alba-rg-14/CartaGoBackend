@@ -6,7 +6,9 @@ import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestaurantePreviewDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteUpdateDTO;
+import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.ClienteDTO;
 import com.cartaGo.cartaGo_backend.entity.Carta;
+import com.cartaGo.cartaGo_backend.entity.Cliente;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import com.cartaGo.cartaGo_backend.repository.CartaRepository;
@@ -319,5 +321,14 @@ public class RestauranteService {
 
         r.setEstado(abierto ? Restaurante.Estado.abierto : Restaurante.Estado.cerrado);
         restauranteRepository.save(r);
+    }
+
+    public RestauranteDTO getByUsuarioId(Integer usuarioId) {
+        Restaurante r = restauranteRepository.findByUsuarioId(usuarioId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe restaurante asociado al usuario " + usuarioId
+                ));
+        return RestauranteDTO.from(r);
     }
 }

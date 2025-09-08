@@ -1,5 +1,6 @@
 package com.cartaGo.cartaGo_backend.repository;
 
+import com.cartaGo.cartaGo_backend.entity.Cliente;
 import com.cartaGo.cartaGo_backend.entity.Restaurante;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -28,4 +29,5 @@ public interface RestauranteRepository extends JpaRepository<Restaurante, Intege
             double minLat, double maxLat,
             double minLon, double maxLon
     );
+    Optional<Restaurante> findByUsuarioId(Integer usuarioId);
 }

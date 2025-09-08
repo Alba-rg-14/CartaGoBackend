@@ -18,7 +18,7 @@ public class RestauranteUpdateDTO {
     private String direccion;
     private Double lat;
     private Double lon;
-    private String imagen;        // secure_url de Cloudinary (opcional)
+    private String imagen;
     private String estado;        // "abierto" | "cerrado"
     public List<HorarioDTO> horarios;
 
