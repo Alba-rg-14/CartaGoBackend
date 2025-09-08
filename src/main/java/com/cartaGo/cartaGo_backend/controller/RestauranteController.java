@@ -8,12 +8,14 @@ import com.cartaGo.cartaGo_backend.dto.HorarioDTO.HorarioRequestSemanalDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestaurantePreviewDTO;
 import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteUpdateDTO;
+import com.cartaGo.cartaGo_backend.repository.CartaRepository;
 import com.cartaGo.cartaGo_backend.service.HorarioService;
 import com.cartaGo.cartaGo_backend.service.RestauranteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -24,6 +26,7 @@ public class RestauranteController {
 
     private final RestauranteService restauranteService;
     private final HorarioService horarioService;
+    private final CartaRepository cartaRepository;
 
     //-------------------------------------------------Getters de restaurante----------------------------------------------------------------------
 
@@ -143,6 +146,15 @@ public class RestauranteController {
     @GetMapping("/{id}/carta")
     public List<PlatoDTO> obtenerCarta(@PathVariable Integer id) {
         return restauranteService.obtenerCarta(id);
+    }
+
+    // GET /restaurante/{id}/carta/id  ->  200: <integer>, 404 si no hay carta
+    @GetMapping("/{id}/carta/id")
+    public ResponseEntity<Integer> getCartaId(@PathVariable Integer id) {
+        return cartaRepository.findByRestauranteId(id)
+                .map(c -> ResponseEntity.ok(c.getId()))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "El restaurante no tiene carta creada"));
     }
 
     //-------------------------------------------------Horario de un restaurante/ estado----------------------------------------------------------------------
