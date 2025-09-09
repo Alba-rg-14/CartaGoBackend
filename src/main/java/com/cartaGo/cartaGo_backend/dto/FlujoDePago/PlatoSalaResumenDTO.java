@@ -12,4 +12,5 @@ public class PlatoSalaResumenDTO {
     private String  platoNombre;
     private BigDecimal precioActual;
     private List<ComensalDTO> participantes;
+    private String imagen;
 }

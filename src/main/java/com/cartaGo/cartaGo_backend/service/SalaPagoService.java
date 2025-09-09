@@ -108,7 +108,7 @@ public class SalaPagoService {
                     ParticipacionSala.builder()
                             .cliente(cliente)
                             .salaPago(sala)
-                            .monto(java.math.BigDecimal.ZERO) // se calculará al final
+                            .monto(java.math.BigDecimal.ZERO)
                             .build()
             );
         }
@@ -150,14 +150,14 @@ public class SalaPagoService {
             }
         }
 
-        // 4) crear PlatoSala (snapshot del precio)
+        // 4) crear PlatoSala
         var platoSala = PlatoSala.builder()
                 .salaPago(sala)
                 .plato(plato)
                 .build();
         platoSala = platoSalaRepository.save(platoSala);
 
-        // 5) crear ParticipacionPlato (una por cliente; reparto a partes iguales se hará al calcular)
+        // 5) crear ParticipacionPlato
         for (Integer clienteId : req.getParticipantes()) {
             var cliente = clienteRepository.findById(clienteId)
                     .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado: " + clienteId));
@@ -360,6 +360,7 @@ public class SalaPagoService {
                     .platoId(ps.getPlato().getId())
                     .platoNombre(ps.getPlato().getNombre())
                     .precioActual(precio)
+                    .imagen(ps.getPlato().getImagen())
                     .participantes(participantes)
                     .build();
         }).toList();
@@ -501,12 +502,26 @@ public class SalaPagoService {
             } catch (Exception ignore) {}
             return new LineaInstruccionDTO(
                     c.getId(),
-                    c.getNombre(),      // cambia si tu campo se llama distinto
+                    c.getNombre(),
                     email,
                     totalPorCliente.get(c.getId()).setScale(2, HM),
                     detallesPorCliente.get(c.getId())
             );
         }).toList();
+
+        // Persistir montos por cliente
+        var psList = participacionSalaRepository.findBySalaPagoId(salaId);
+        for (ParticipacionSala ps : psList) {
+            var cid = ps.getCliente().getId();
+            java.math.BigDecimal totalC = totalPorCliente.getOrDefault(cid, java.math.BigDecimal.ZERO)
+                    .setScale(2, HM);
+            ps.setMonto(totalC);
+        }
+        participacionSalaRepository.saveAll(psList);
+
+        // Guardar el saldo total de la cuenta en la sala
+        sala.setSaldo(subtotal.setScale(2, HM).doubleValue());
+
 
         // Cerrar sala y fijar modo
         sala.setFormaDePago(modo.equals("igualitario")
@@ -555,7 +570,7 @@ public class SalaPagoService {
         var sala = salaPagoRepository.findById(salaId)
                 .orElseThrow(() -> new EntityNotFoundException("Sala no encontrada: " + salaId));
 
-        // Debe haber una forma de pago elegida (la fijaste cuando se generaron)
+
         String modo = switch (sala.getFormaDePago()) {
             case pago_igualitario    -> "igualitario";
             case pago_personalizado  -> "personalizado";
@@ -586,7 +601,7 @@ public class SalaPagoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La sala no tiene platos");
         }
 
-        // Subtotal con precio ACTUAL (igual que tu método original)
+        // Subtotal con precio ACTUAL
         java.math.BigDecimal subtotal = platosSala.stream()
                 .map(ps -> ps.getPlato().getPrecio())
                 .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
@@ -657,7 +672,7 @@ public class SalaPagoService {
             ajustarCentimos(totalPorCliente, subtotal.setScale(2, HM));
         }
 
-        // Construir DTO (mismo bloque que ya tienes)
+
         var porCliente = clientes.stream().map(c -> {
             String email = null;
             try {
