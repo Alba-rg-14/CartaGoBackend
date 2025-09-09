@@ -4,10 +4,7 @@ import com.cartaGo.cartaGo_backend.dto.RestauranteDTO.RestauranteDTO;
 import com.cartaGo.cartaGo_backend.dto.UsuarioLoginDTO.*;
 import com.cartaGo.cartaGo_backend.entity.Usuario;
 import com.cartaGo.cartaGo_backend.security.JwtService;
-import com.cartaGo.cartaGo_backend.service.ClienteService;
-import com.cartaGo.cartaGo_backend.service.MailService;
-import com.cartaGo.cartaGo_backend.service.RestauranteService;
-import com.cartaGo.cartaGo_backend.service.UsuarioService;
+import com.cartaGo.cartaGo_backend.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,6 +29,7 @@ public class AuthController {
     private final ClienteService clienteService;
     private final RestauranteService restauranteService;
     private final MailService mailService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public ResponseEntity<UsuarioResponseDTO> register(@RequestBody @Valid RegistroUsuarioDto dto){
@@ -63,8 +61,7 @@ public class AuthController {
 
     @PostMapping("/change-password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void changePassword(Authentication auth,
-                               @RequestBody @Valid ChangePasswordRequestDTO req) {
+    public void changePassword(Authentication auth, @RequestBody @Valid ChangePasswordRequestDTO req) {
         if (auth == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
         usuarioService.changePassword(auth.getName(), req.getCurrentPassword(), req.getNewPassword());
     }
@@ -81,44 +78,31 @@ public class AuthController {
     }
     record MeDto(Integer id, String email, String role) {}
 
-    // DTOs simples
-    public record ResetPasswordRequest(String email) {}
-    public record ResetPasswordConfirmRequest(String token, String newPassword) {}
+    public record ResetCodeRequestDTO(String email) {}
+    public record ResetCodeConfirmRequestDTO(String email, String code, String newPassword) {}
 
-    @PostMapping("/reset-password/request")
+    @PostMapping("/password-reset/code")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void requestReset(@RequestBody ResetPasswordRequest req) {
-        // 1) buscar usuario (si no existe, devolver 204 igualmente para no filtrar emails)
-        usuarioService.findByEmail(req.email()); // no hace falta usar el return
-
-        // 2) generar token tiempo limitado (p.ej. 15 min)
-        String token = jwtService.generateResetPasswordToken(req.email(), 15);
-
-        // 3) enviar email con enlace
-        String resetLink = "https://cartago-44hbc017m-albas-projects-ec9d8895.vercel.app/auth/reset-confirm?token=" + token;
-        mailService.send(
-                req.email(),
-                "Recupera tu contraseña",
-                """
-                Hola,
-                
-                Has solicitado restablecer tu contraseña. Pulsa este enlace:
-                %s
-                
-                Si no fuiste tú, ignora este correo.
-                """.formatted(resetLink)
-        );
+    public void sendResetCode(@RequestBody ResetCodeRequestDTO req) {
+        if (req.email() == null || req.email().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email requerido");
+        }
+        passwordResetService.sendCode(req.email().trim());
     }
 
-    @PostMapping("/reset-password/confirm")
+    @PostMapping("/password-reset/confirm")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void confirmReset(@RequestBody ResetPasswordConfirmRequest req) {
-        if (req.newPassword() == null || req.newPassword().length() < 8) {
+    public void confirmResetCode(@RequestBody ResetCodeConfirmRequestDTO req) {
+        if (req.email() == null || req.code() == null || req.newPassword() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campos requeridos");
+        }
+        if (req.newPassword().length() < 8) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Contraseña mínima 8 caracteres");
         }
-        String email = jwtService.validateAndGetEmailFromResetToken(req.token());
-        usuarioService.forceSetPasswordByEmail(email, req.newPassword());
+        passwordResetService.confirm(req.email().trim(), req.code().trim(), req.newPassword());
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     @GetMapping("/{usuarioId}/cliente")
     public ClienteDTO getClienteByUsuario(@PathVariable Integer usuarioId) {
