@@ -22,10 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.DayOfWeek;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.List;
 
 import static com.cartaGo.cartaGo_backend.mapper.RestauranteMapper.toDTO;
@@ -39,6 +36,7 @@ public class RestauranteService {
     private final CartaRepository cartaRepository;
     private final PlatoService platoService;
     private static final ZoneId ZONA = ZoneId.of("Europe/Madrid");
+    private final ZonedDateTime ahora = java.time.ZonedDateTime.now(ZONA);
 
 
     //Crear restaurante dado un usuario y nombre
@@ -49,6 +47,23 @@ public class RestauranteService {
                 .build();
         restauranteRepository.saveAndFlush(r);
         return r;
+    }
+
+    public Restaurante.Estado getEstadoRestaurante(Integer restauranteId){
+        Restaurante r = restauranteRepository.findById(restauranteId)
+                .orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con id: " + restauranteId));
+
+        DayOfWeek dia = ahora.getDayOfWeek();
+        LocalTime hora = ahora.toLocalTime();
+
+        boolean abierto = horarioRepository
+                .findByRestauranteIdAndDiaOrderByAperturaAsc(restauranteId, dia)
+                .stream()
+                .anyMatch(h -> !hora.isBefore(h.getApertura()) && hora.isBefore(h.getCierre()));
+
+        r.setEstado(abierto ? Restaurante.Estado.abierto : Restaurante.Estado.cerrado);
+        restauranteRepository.save(r);
+        return r.getEstado();
     }
 
     public List<RestauranteDTO> getAllRestaurantes() {
@@ -82,9 +97,10 @@ public class RestauranteService {
     }
 
     public List<RestaurantePreviewDTO> getRestaurantesPreviewDTOAbiertos() {
-        LocalDateTime ahora = LocalDateTime.now();
+
         DayOfWeek dia = ahora.getDayOfWeek();
         LocalTime hora = ahora.toLocalTime();
+
 
         return restauranteRepository.findAll().stream()
                 .filter(r -> horarioRepository
@@ -148,7 +164,7 @@ public class RestauranteService {
 
     private RestauranteDTO mapToDto(Restaurante r) {
         // 1) calcular estado "abierto/cerrado" AHORA (día y hora actuales en nuestra zona horaria)
-        var ahora = java.time.ZonedDateTime.now(ZONA);
+
         var dia   = ahora.getDayOfWeek();
         var hora  = ahora.toLocalTime();
 
@@ -310,7 +326,7 @@ public class RestauranteService {
         Restaurante r = restauranteRepository.findById(restauranteId)
                 .orElseThrow(() -> new EntityNotFoundException("Restaurante no encontrado con id: " + restauranteId));
 
-        LocalDateTime ahora = LocalDateTime.now();
+
         DayOfWeek dia = ahora.getDayOfWeek();
         LocalTime hora = ahora.toLocalTime();
 
